@@ -23,15 +23,13 @@
 <script src="js/lib/imageSearch/image_search.js"></script>
 <script src="js/grid_coordinates.js"></script>
 <script src="js/fog_of_war.js"></script>
+<script src="js/level_markers.js"></script>
 <script src="js/firebase_config.js"></script>
 <script src="js/settings_sync.js"></script>
 <script src="js/firebase_session.js"></script>
 
 <script src="js/lib//leaflet/leaflet.min.js"></script>
 <link href="js/lib//leaflet/leaflet.min.css" rel="stylesheet" />
-
-<link href="js/lib//leaflet-mouseposition/L.Control.MousePosition.css" rel="stylesheet" />
-<script src="js/lib//leaflet-mouseposition/L.Control.MousePosition.js"></script>
 
 <link href="js/lib//leaflet-search/leaflet-search.src.min.css" rel="stylesheet"/>
 <script src="js/lib//leaflet-search/leaflet-search.src.min.js"></script>
@@ -239,6 +237,44 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 
 .found {
   opacity: .33;
+}
+
+.level-marker-circle {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--level-color);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--level-color) 18%, transparent);
+}
+
+.level-marker:hover .level-marker-circle,
+.level-marker:focus-visible .level-marker-circle,
+.level-marker-selected .level-marker-circle {
+  outline: 2px solid var(--level-color);
+  outline-offset: 2px;
+  background: color-mix(in srgb, var(--level-color) 30%, transparent);
+}
+
+.level-marker-symbol {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  color: #17212b;
+  font: 600 var(--level-symbol-size, 14px)/1 sans-serif;
+  pointer-events: none;
+}
+
+.level-marker-readable .level-marker-symbol {
+  display: flex;
+}
+
+.level-marker .marker-label {
+  pointer-events: none;
 }
 
 .hidden {
@@ -674,6 +710,7 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 <svg style="display:none" aria-hidden="true">
   <symbol id="ui-settings" viewBox="0 0 24 24"><path d="m9 3-1 3-3 1 1 3-2 2 2 2-1 3 3 1 1 3h6l1-3 3-1-1-3 2-2-2-2 1-3-3-1-1-3Z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="ui-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5Z M3 12l9 5 9-5 M3 16l9 5 9-5"/></symbol>
+  <symbol id="ui-map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z M9 3v15 M15 6v15"/></symbol>
   <symbol id="ui-camera" viewBox="0 0 24 24"><path d="M4 7h4l2-3h4l2 3h4v13H4Z"/><circle cx="12" cy="13" r="4"/></symbol>
   <symbol id="ui-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
   <symbol id="ui-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
@@ -683,7 +720,7 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 </svg>
 <div id="map-controls" class="map-controls leaflet-control" role="region" aria-label="Map controls">
   <div class="map-controls-header">
-    <span class="map-controls-title">OOTSS map</span>
+    <span class="map-controls-title">OOTSS Map</span>
     <div id="map-zoom"></div>
     <a class="repo-link" href="https://github.com/natoverse/ootss" target="_blank" rel="noopener noreferrer" title="Open the natoverse/ootss fork on GitHub">
       <svg aria-hidden="true"><use href="#ui-repository"/></svg><span>GitHub</span>
@@ -691,42 +728,47 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
   </div>
   <div id="map-search"></div>
   <div id="map-actions" class="map-actions" hidden>
-    <details id="settings-menu">
-      <summary><svg aria-hidden="true"><use href="#ui-settings"/></svg><span>Settings</span></summary>
-      <div class="map-menu-panel">
-        <p class="map-menu-heading">Settings backup</p>
-        <button type="button" data-map-action="load-settings">Load settings JSON</button>
-        <button type="button" data-map-action="save-settings">Save settings JSON</button>
-        <button type="button" data-map-action="reset-settings" class="map-action-danger">Reset settings</button>
-        <p class="map-menu-heading">Game save</p>
-        <button type="button" data-map-action="import-save">Import game save file</button>
-        <button type="button" data-map-action="copy-path">Copy game save folder path</button>
-        <button type="button" data-map-action="opacity">Toggle map opacity</button>
-      </div>
+    <details id="map-menu">
+      <summary><svg aria-hidden="true"><use href="#ui-map"/></svg><span>Map</span></summary>
+      <div id="map-navigation" class="map-menu-panel"></div>
     </details>
     <details id="layers-menu">
       <summary><svg aria-hidden="true"><use href="#ui-layers"/></svg><span>Layers</span></summary>
       <div id="map-layers" class="map-menu-panel"></div>
+    </details>
+    <details id="settings-menu">
+      <summary><svg aria-hidden="true"><use href="#ui-settings"/></svg><span>Settings</span></summary>
+      <div class="map-menu-panel">
+        <p class="map-menu-heading">Settings Backup</p>
+        <button type="button" data-map-action="load-settings">Load Settings JSON</button>
+        <button type="button" data-map-action="save-settings">Save Settings JSON</button>
+        <button type="button" data-map-action="reset-settings" class="map-action-danger">Reset Settings</button>
+        <p class="map-menu-heading">Game Save</p>
+        <button type="button" data-map-action="import-save">Import Game Save File</button>
+        <button type="button" data-map-action="copy-path">Copy Game Save Folder Path</button>
+        <button type="button" data-map-action="opacity">Show / Hide Completed Items</button>
+      </div>
     </details>
     <button id="drop" type="button" title="Find a location by screenshot: upload, drop an image, or paste it on the map">
       <svg aria-hidden="true"><use href="#ui-camera"/></svg><span>Screenshot</span>
     </button>
     <input type="file" id="file" accept="image/*" hidden>
   </div>
+  <div id="map-address"></div>
   <div id="account-control" class="account-control">
     <span id="account-user" class="account-user"></span>
-    <button id="account-status" type="button">loading settings...</button>
-    <button id="google-sign-in" type="button" disabled>sign in with Google</button>
-    <button id="google-sign-out" type="button" hidden>sign out</button>
-    <a id="firebase-setup-link" href="https://github.com/natoverse/ootss/blob/main/FIREBASE_SETUP.md" target="_blank" rel="noopener noreferrer">Firebase setup</a>
+    <button id="account-status" type="button">Loading Settings...</button>
+    <button id="google-sign-in" type="button" disabled>Sign in with Google</button>
+    <button id="google-sign-out" type="button" hidden>Sign Out</button>
+    <a id="firebase-setup-link" href="https://github.com/natoverse/ootss/blob/main/FIREBASE_SETUP.md" target="_blank" rel="noopener noreferrer">Firebase Setup</a>
   </div>
 </div>
 <div id="account-notice" class="account-notice" hidden>
   <div>
     <p id="account-message"></p>
-    <button id="account-retry" type="button" hidden>retry</button>
-    <button id="account-export" type="button" hidden>export settings backup</button>
-    <button id="account-reset-local" type="button" hidden>reset guest settings</button>
+    <button id="account-retry" type="button" hidden>Retry</button>
+    <button id="account-export" type="button" hidden>Export Settings Backup</button>
+    <button id="account-reset-local" type="button" hidden>Reset Guest Settings</button>
   </div>
 </div>
 
@@ -1114,10 +1156,21 @@ function getIconHTML(feature, size=48) {
 
   let html = options.html || `<i class="${options.class}" style="color:${fg}"><span class="icon-text">${title}</span></i>`;
 
+  if (o.type === 'Level_Entry') {
+    return `<span class="level-marker-circle" style="--level-color:${bg}"><span class="level-marker-symbol">${title}</span></span><div class="marker-label">${label}</div>`;
+  }
   return `<span class="icon-base icon-${size}" style="color:${bg}">${html}</span><div class="marker-label">${label}</div>`;
 }
 
 let baseIcon = (feature) => {
+  if (feature.properties.type === 'Level_Entry') {
+    const [lng, lat] = feature.geometry.coordinates;
+    return L.divIcon({
+      className: 'divIcon level-marker',
+      html: getIconHTML(feature),
+      ...LevelMarkers.layout(map, { lat, lng }),
+    });
+  }
   let size = 48;
   return L.divIcon({
     className: 'divIcon',
@@ -1679,6 +1732,11 @@ function updateZoom() {
 
   const currentZoom = map.getZoom();
   const showLabels = currentZoom >= 5; // Adjust threshold as needed
+  map.eachLayer(marker => {
+    if (marker instanceof L.Marker && marker.feature?.properties?.type === 'Level_Entry') {
+      LevelMarkers.resize(marker, map);
+    }
+  });
 
   document.querySelectorAll('.marker-label').forEach(label => {
     label.style.display = showLabels ? 'block' : 'none';
@@ -1696,9 +1754,9 @@ function baseLayerChange(name) {
   baseLayerName = name;
   addGrid();
   updateFog();
+  updateCRS(name);
   updateZoom();
   updateMarkers();
-  updateCRS(name);
 }
 
 const getCoordinates = marker => marker.feature.geometry.coordinates.map(String).join(',');
@@ -1747,6 +1805,8 @@ function youTubeId(url) {
 function openPopup(e) {
   const marker = e.target;
   if (isMarkerObscured(marker)) {
+    // bindPopup also installs a click handler that would otherwise reopen it.
+    marker.unbindPopup();
     showAlert('Reveal this screen to view its markers');
     return;
   }
@@ -2024,7 +2084,7 @@ function addGrid() {
 
 function addGridAddressControl() {
   const GridAddressControl = L.Control.extend({
-    options: { position: 'bottomleft' },
+    options: { position: 'topright' },
 
     onAdd(map) {
       this._container = L.DomUtil.create('div', 'grid-address-control');
@@ -2049,7 +2109,8 @@ function addGridAddressControl() {
       this.update();
     },
 
-    _onMouseLeave() {
+    _onMouseLeave(event) {
+      if (event.relatedTarget instanceof Node && document.getElementById('map-controls').contains(event.relatedTarget)) return;
       this._point = null;
       this.update();
     },
@@ -2115,12 +2176,18 @@ function updateFog() {
 }
 
 
-function initializeMapControls(zoomControl, layerControl, searchControl) {
+function formatLayerName(name) {
+  return name.replaceAll('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase()).replace(' Of ', ' of ');
+}
+
+function initializeMapControls(zoomControl, mapControl, layerControl, searchControl) {
   const controls = document.getElementById('map-controls');
   const menus = [...controls.querySelectorAll('details')];
   const closeMenus = () => menus.forEach(menu => { menu.open = false; });
   document.getElementById('map-zoom').appendChild(zoomControl.getContainer());
+  document.getElementById('map-navigation').appendChild(mapControl.getContainer());
   document.getElementById('map-layers').appendChild(layerControl.getContainer());
+  document.getElementById('map-address').appendChild(gridAddressControl.getContainer());
   document.getElementById('map-actions').hidden = false;
   for (const [selector, icon, label] of [
     ['.leaflet-control-zoom-in', 'plus', 'Zoom in'],
@@ -2208,7 +2275,7 @@ function drawMap() {
         attribution: attribution,
       });
     }
-
+    baseLayers[name].id = name;
   }
 
   let baseLayer = Object.values(baseLayers)[0];
@@ -2277,10 +2344,11 @@ function drawMap() {
   });
 
   map.on('baselayerchange', function(e) {
-    baseLayerChange(e.name);
+    const name = e.layer.id;
+    baseLayerChange(name);
     for (const [k,v] of Object.entries(baseLayers)) {
 
-      if (e.name==k) {
+      if (name==k) {
         settings.activeLayers[k] = true;
       } else {
         delete settings.activeLayers[k];
@@ -2301,9 +2369,6 @@ function drawMap() {
   });
 
   const zoomControl = L.control.zoom({ position: 'topright' }).addTo(map);
-
-  L.control.mousePosition({lngFirst: true, latFormatter:Math.round, lngFormatter:Math.round }).addTo(map);
-
 
   // Fit map to image bounds
   //map.fitBounds(bounds);
@@ -2372,7 +2437,7 @@ function drawMap() {
     }
 
     // pre-create groups
-    for (const group of ['labels','freezers','teleporters','logs','treasures','signs','levels']) {
+    for (const group of ['labels','levels','freezers','teleporters','logs','treasures','signs']) {
       if (!layers[group]) {
         layers[group] = L.layerGroup();
         layers[group].id = group;
@@ -2451,14 +2516,18 @@ function drawMap() {
 
       marker.feature = feature;
 
-      marker.bindTooltip(getTooltip, {offset: [20,-35]});
+      marker.bindTooltip(getTooltip, o.type === 'Level_Entry'
+        ? { offset: [0, -8], direction: 'top' }
+        : { offset: [20, -35] });
 
       marker.on('popupopen', () => {
         currentOpenMarker = marker;
+        if (o.type === 'Level_Entry') marker.getElement()?.classList.add('level-marker-selected');
       })
 
       marker.on('popupclose', () => {
         currentOpenMarker = null;
+        if (o.type === 'Level_Entry') marker.getElement()?.classList.remove('level-marker-selected');
         if (location.hash.length > 1) 
           history.replaceState(null, '', window.location.pathname + window.location.search);
       })
@@ -2495,21 +2564,23 @@ function drawMap() {
     // update overlay names to include count
     var overlaysWithCounts = Object.fromEntries(
       Object.entries(layers).map(([name, layer]) => {
-        if (layer === gridLayer || layer === fogLayer) return [name, layer];
+        if (layer === gridLayer || layer === fogLayer) return [formatLayerName(name), layer];
         const hasMarkers = layer.getLayers ? layer.getLayers().some(l => l instanceof L.Marker) : layer instanceof L.Marker;
         const count = layer.getLayers ? layer.getLayers().filter(l => l instanceof L.Marker).length : (layer instanceof L.Marker ? 1 : 0);
-        return [`${name}${hasMarkers ? ' ('+count+')' : ''}`, layer];
+        return [`${formatLayerName(name)}${hasMarkers ? ' ('+count+')' : ''}`, layer];
       })
     );
 
     // sort overlay names
     // overlaysWithCounts = Object.fromEntries( Object.entries(overlaysWithCounts).sort((a, b) => a[0].localeCompare(b[0])) );
 
-    let layercontrol = L.control.layers(baseLayers, overlaysWithCounts, {collapsed: false, position: 'topright'}).addTo(map);
+    const namedMaps = Object.fromEntries(Object.entries(baseLayers).map(([name, layer]) => [formatLayerName(name), layer]));
+    const mapcontrol = L.control.layers(namedMaps, {}, {collapsed: false, position: 'topright'}).addTo(map);
+    const layercontrol = L.control.layers({}, overlaysWithCounts, {collapsed: false, position: 'topright'}).addTo(map);
     const fogActions = L.DomUtil.create('div', 'fog-bulk-actions',
       layercontrol.getContainer().querySelector('.leaflet-control-layers-list'));
     L.DomEvent.on(fogActions, 'keydown', L.DomEvent.stopPropagation);
-    for (const [label, revealed] of [['reveal all', true], ['hide all', false]]) {
+    for (const [label, revealed] of [['Reveal All', true], ['Hide All', false]]) {
       const button = L.DomUtil.create('button', '', fogActions);
       button.type = 'button';
       button.textContent = label;
@@ -2577,7 +2648,7 @@ function drawMap() {
       focusMarkerByName(feature.properties.id);
     });
 
-    initializeMapControls(zoomControl, layercontrol, searchControl);
+    initializeMapControls(zoomControl, mapcontrol, layercontrol, searchControl);
 
     initImageSearch(matches=>{
       if (matches && matches.length>0) {

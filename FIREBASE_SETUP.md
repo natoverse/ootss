@@ -150,12 +150,12 @@ fails explicitly instead of enabling a misconfigured client.
 
 ## 6. OOTSS app and Firebase Console: verify the new database
 
-1. In the **deployed OOTSS app**, use the top-right **sign in with Google**
+1. In the **deployed OOTSS app**, use the top-right **Sign in with Google**
    button.
 2. Your Google profile starts with fresh settings unless this account already
    has a cloud save. Guest settings remain untouched in localStorage; there is
    no automatic import.
-3. Reveal a screen or change a setting and wait for **synced**.
+3. Reveal a screen or change a setting and wait for **Synced**.
 4. Switch to **Firebase Console**, select the OOTSS project, and open
    **Build > Firestore Database > Data**. Find
    **users > your Firebase UID > settings > ootss**.
@@ -178,9 +178,9 @@ Firestore caches data and pending writes in IndexedDB; this cache is not cleared
 automatically between sessions. Use a trusted browser/device. Guest saves still
 use localStorage, but signed-in map settings are written only to Firestore.
 
-Writes are coalesced to limit requests. **saving...** means changes are pending;
-**synced** means the current settings were acknowledged by Firestore. On failure,
-the app displays **sync error** and retains the current draft for retry or export.
+Writes are coalesced to limit requests. **Saving...** means changes are pending;
+**Synced** means the current settings were acknowledged by Firestore. On failure,
+the app displays **Sync Error** and retains the current draft for retry or export.
 Reconnect and sync pending edits before signing out. Other devices read the
 latest profile on refresh; concurrently editing multiple devices can result in
 last-write-wins replacement.

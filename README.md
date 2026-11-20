@@ -10,8 +10,11 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
   exploration on every layer, and per-screen or bulk reveal/hide controls.
 * [Google accounts and cloud settings](#google-accounts-and-cloud-settings):
   optional Firebase-backed profiles alongside permanent local guest saves.
-* Unified map controls: an upper-right dock for search, layers, settings and
-  game-save tools, screenshot lookup, zoom, and a link to this fork on GitHub.
+* Unified map controls: an upper-right dock for map navigation, visibility
+  layers, cell addresses, search, settings and game-save tools, screenshot
+  lookup, zoom, and a link to this fork on GitHub.
+* Cell-aligned level markers: translucent, region-colored circles that scale
+  with map zoom instead of oversized pins, with hover and selection highlights.
 * [Automated deployment](#github-pages-deployment): GitHub Actions publishes
   changes on `main` to this fork's GitHub Pages site.
 
@@ -21,7 +24,7 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
 
 ## Grid addresses
 
-Enable **grid** in the map's layer selector to show screen addresses, a lighter
+Enable **Grid** in the dock's **Layers** panel to show screen addresses, a lighter
 cell grid inside each screen, and a live **Cell** address while hovering.
 This applies to all map layers.
 
@@ -52,18 +55,18 @@ entry screen and can be adjusted if further exploration shows otherwise.
 
 ## Fog of war
 
-**fog of war** is enabled by default in the upper-right layer selector. Clouds
+**Fog of War** is enabled by default in the upper-right **Layers** panel. Clouds
 cover unexplored screens and their markers; only each layer's origin starts clear.
 Uncheck the cloud checkbox in a screen's upper-right corner to reveal it, or
-check it again to obscure it. This works independently of the **grid** overlay.
+check it again to obscure it. This works independently of the **Grid** overlay.
 
-The upper-right options also include **reveal all** and **hide all** buttons.
+The **Layers** panel also includes **Reveal All** and **Hide All** buttons.
 These update the saved screen checkboxes only for the selected map layer, always
-leaving its starting screen clear. They do not change the global **fog of war**
+leaving its starting screen clear. They do not change the global **Fog of War**
 option or exploration on other layers.
 
 Exploration is tracked separately on every map layer.
-Turning **fog of war** off reveals the entire map without erasing your progress.
+Turning **Fog of War** off reveals the entire map without erasing your progress.
 The `fogOfWar` setting and `revealedScreens` map are stored with completed levels
 in the existing settings JSON. **Settings > Save Settings** exports them, and
 **Settings > Load Settings** restores them. Older settings files default to fog
@@ -74,8 +77,8 @@ automatically to `OH`/`OL` and two-digit coordinates without losing reveal choic
 ## Google accounts and cloud settings
 
 Guests can use the app indefinitely with settings saved in this browser's
-localStorage. The top-right **sign in with Google** button switches to a
-separate Firebase profile; **sign out** switches back to your unchanged guest
+localStorage. The top-right **Sign in with Google** button switches to a
+separate Firebase profile; **Sign Out** switches back to your unchanged guest
 save. Guest progress is **not** automatically imported into a Google account.
 
 Signed-in settings, completed-level flags, fog exploration, and map preferences
@@ -85,7 +88,7 @@ profile from a settings JSON file. Resetting settings affects only the active
 profile.
 
 The top-right status shows saving, synced, offline, or sync errors. Failed
-changes remain in memory for retry or JSON export; click **sync error** to retry.
+changes remain in memory for retry or JSON export; click **Sync Error** to retry.
 Firebase caches signed-in data in IndexedDB and queues offline edits. Connect
 and finish syncing before signing out or closing a tab with unsaved changes.
 Other devices load the account's latest settings when refreshed; simultaneous

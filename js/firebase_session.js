@@ -80,18 +80,18 @@ const SettingsAccount = (() => {
     render() {
       const status = this.sync?.status();
       const error = status?.error?.message || this.error;
-      const label = error ? 'sync error'
-        : this.user ? !this.sync ? 'loading cloud settings'
-          : !navigator.onLine ? 'offline'
-            : status.dirty || status.pending ? 'saving...' : 'synced'
-        : 'guest · saved in this browser';
+      const label = error ? 'Sync Error'
+        : this.user ? !this.sync ? 'Loading Cloud Settings'
+          : !navigator.onLine ? 'Offline'
+            : status.dirty || status.pending ? 'Saving...' : 'Synced'
+        : 'Guest · Saved in this browser';
       this.statusButton.textContent = label;
       this.statusButton.classList.toggle('account-error', Boolean(error));
       this.statusButton.title = error || (this.user
         ? 'Firebase settings for this Google account. Changes on other devices load when you refresh.'
         : 'Guest progress stays in this browser and is not automatically copied to Google accounts.');
       this.signInButton.hidden = Boolean(this.user);
-      this.signInButton.textContent = this.busy && !this.user ? 'signing in...' : 'sign in with Google';
+      this.signInButton.textContent = this.busy && !this.user ? 'Signing in...' : 'Sign in with Google';
       this.signInButton.disabled = !this.client || this.busy;
       this.signInButton.title = this.client ? 'Use your separate Google-account settings'
         : 'Configure Firebase using FIREBASE_SETUP.md to enable Google sign-in';
