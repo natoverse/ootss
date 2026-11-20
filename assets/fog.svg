@@ -1,27 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 260" preserveAspectRatio="none">
   <defs>
-    <linearGradient id="sky" x2="0" y2="1">
-      <stop stop-color="#c9d2df"/>
-      <stop offset="1" stop-color="#aab7ca"/>
-    </linearGradient>
-    <radialGradient id="cloud" cx=".4" cy=".25" r=".8">
-      <stop stop-color="#f5f7fa"/>
-      <stop offset=".6" stop-color="#dce3ec"/>
-      <stop offset="1" stop-color="#b9c6d7"/>
-    </radialGradient>
+    <filter id="wisps" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency=".018 .025" numOctaves="2" seed="8" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 .965  0 0 0 0 .984  0 0 0 0 1  1.8 0 0 0 -.55"/>
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
   </defs>
-  <path fill="url(#sky)" d="M0 0h380v260H0z"/>
-  <g fill="url(#cloud)">
-    <ellipse cx="45" cy="25" rx="88" ry="57"/>
-    <ellipse cx="161" cy="11" rx="86" ry="65"/>
-    <ellipse cx="291" cy="38" rx="103" ry="67"/>
-    <ellipse cx="388" cy="87" rx="67" ry="75"/>
-    <ellipse cx="-5" cy="127" rx="87" ry="64"/>
-    <ellipse cx="97" cy="101" rx="77" ry="61"/>
-    <ellipse cx="199" cy="95" rx="89" ry="70"/>
-    <ellipse cx="285" cy="148" rx="85" ry="64"/>
-    <ellipse cx="75" cy="211" rx="105" ry="78"/>
-    <ellipse cx="184" cy="198" rx="83" ry="64"/>
-    <ellipse cx="316" cy="237" rx="111" ry="81"/>
-  </g>
+  <path fill="#cdd9e6" fill-opacity=".94" d="M0 0h380v260H0z"/>
+  <path filter="url(#wisps)" d="M0 0h380v260H0z"/>
 </svg>
