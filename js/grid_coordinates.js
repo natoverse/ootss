@@ -25,6 +25,22 @@ const GridCoordinates = (() => {
     return address(conf, latlng)?.slice(0, -2) ?? null;
   }
 
+  function resolve(conf, value) {
+    if (!supports(conf) || typeof value !== 'string') return null;
+    const match = value.trim().toUpperCase().match(/^([A-Z]{1,2})([+-]\d{1,2})([+-]\d{1,2})([A-Z])([A-Z])$/);
+    if (!match || match[1] !== conf.addressPrefix) return null;
+    const [screenWidth, screenHeight] = conf.grid;
+    const cellX = match[4].charCodeAt(0) - 65;
+    const cellY = match[5].charCodeAt(0) - 65;
+    if (cellX >= screenWidth || cellY >= screenHeight) return null;
+    const x = (Number(match[2]) + conf.addressOrigin[0]) * screenWidth + cellX;
+    const y = (Number(match[3]) + conf.addressOrigin[1]) * screenHeight + cellY;
+    if (x < 0 || y < 0 || x >= conf.size[0] || y >= conf.size[1]) return null;
+    const latlng = { lng: conf.corner[0] + x, lat: conf.corner[1] + y };
+    const canonical = address(conf, latlng);
+    return { address: canonical, screen: canonical.slice(0, -2), latlng };
+  }
+
   function screens(conf) {
     if (!supports(conf)) return [];
     const [width, height] = conf.size;
@@ -45,7 +61,7 @@ const GridCoordinates = (() => {
     return result;
   }
 
-  return { supports, screenAddress, address, screen, screens };
+  return { supports, screenAddress, address, screen, screens, resolve };
 })();
 
 if (typeof module !== 'undefined') module.exports = GridCoordinates;

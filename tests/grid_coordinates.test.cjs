@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { address, screenAddress, screen, screens } = require('../js/grid_coordinates.js');
+const { address, screenAddress, screen, screens, resolve } = require('../js/grid_coordinates.js');
 
 const overworld = {
   group: 'overworld',
@@ -114,4 +114,26 @@ test('partial edge screens are clipped without gaps or area outside the map', ()
     address: 'S+08+03',
     bounds: [[78.5, 91.5], [83.5, 100.5]],
   });
+});
+
+test('cell addresses resolve to their centers on every map without aliasing', () => {
+  for (const conf of maps) {
+    for (let y = 0; y < conf.size[1]; y++) {
+      for (let x = 0; x < conf.size[0]; x++) {
+        const latlng = { lng: conf.corner[0] + x, lat: conf.corner[1] + y };
+        const key = address(conf, latlng);
+        assert.deepEqual(resolve(conf, key), { address: key, screen: key.slice(0, -2), latlng });
+      }
+    }
+  }
+  assert.equal(resolve(overworld, ' o-0+0jg ').address, 'O+00+00JG');
+});
+
+test('address resolution rejects wrong layers, invalid cells and partial-edge overflow', () => {
+  for (const key of ['OH+00+00JG', 'O+00+00TM', 'O+00+00SN', 'O-06-05AA', 'O+05+00AA', 'O+00+07AA', 'O00+00AA', 'O+00+00AA/extra', null]) {
+    assert.equal(resolve(overworld, key), null, key);
+  }
+  assert.equal(resolve(stones, 'S+08+03IE').address, 'S+08+03IE');
+  assert.equal(resolve(stones, 'S+08+03IF'), null);
+  assert.equal(resolve({}, 'O+00+00JG'), null);
 });

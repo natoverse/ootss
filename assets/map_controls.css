@@ -1,11 +1,24 @@
-.map-controls {
+.map-dock {
   position: fixed;
   top: max(12px, env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
   z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(384px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  pointer-events: none;
+}
+.map-dock:has(.message-panel:not([hidden])) { overflow-y: auto; overscroll-behavior: contain; }
+.map-controls {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  pointer-events: auto;
   float: none;
   box-sizing: border-box;
-  width: min(384px, calc(100vw - 24px));
+  width: 100%;
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, .7);
   border-radius: 16px;
@@ -170,13 +183,84 @@
 .map-controls #firebase-setup-link { color: #1d4ed8; }
 .map-controls .grid-address-control { margin-top: 10px; padding: 8px 10px; border: 1px solid #dce4ee; border-radius: 9px; background: #f8fafc; color: #334155; font: 600 12px/1.5 monospace; pointer-events: auto; user-select: text; }
 
+.message-panel {
+  position: relative;
+  z-index: 1;
+  flex: 0 1 460px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  margin: 0 !important;
+  padding: 12px;
+  border: 1px solid #dce4ee;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .98);
+  color: #243247;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, .2);
+  font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+}
+.message-panel[hidden] { display: none; }
+.message-panel *, .message-panel *::before, .message-panel *::after { box-sizing: border-box; }
+.message-panel [hidden] { display: none !important; }
+.message-panel svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.message-panel button {
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: #f0f4f8;
+  color: #243247;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.message-panel button:hover { background: #e2eaf3; }
+.message-panel button:disabled { color: #8794a6; cursor: default; }
+.message-panel :is(button, textarea):focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.message-panel-header, .message-context, .message-composer > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.message-panel-header > strong { font-size: 15px; }
+.message-panel-header button { display: flex; align-items: center; }
+.message-modes { display: flex; gap: 6px; }
+.message-modes button { flex: 1; }
+.message-modes button[aria-pressed="true"] { color: #1d4ed8; background: #e6efff; }
+.message-context { min-height: 32px; font-weight: 600; }
+.message-selection { overflow-wrap: anywhere; }
+.message-status { margin: 0; color: #64748b; font-size: 12px; overflow-wrap: anywhere; }
+.message-status:empty { display: none; }
+.message-error { color: #b42332; overflow-wrap: anywhere; }
+.message-list { flex: 1; min-height: 70px; overflow: auto; overscroll-behavior: contain; }
+.board-message { margin-bottom: 8px; padding: 10px; border: 1px solid #e5ebf2; border-radius: 9px; background: #f8fafc; }
+.board-message header { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; }
+.board-message header strong { overflow-wrap: anywhere; }
+.board-message time { flex: 0 0 auto; color: #64748b; }
+.board-message .message-address { min-height: 24px; margin: 5px 0; padding: 2px 5px; color: #1d4ed8; font: 600 11px/1.5 monospace; }
+.message-text { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.message-spoiler { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 6px; padding: 10px; border-radius: 7px; background: #dce4ee; color: #475569; font-size: 12px; }
+.message-hide-spoiler { margin-top: 8px; font-size: 11px !important; }
+.message-empty { padding: 12px; color: #64748b; text-align: center; }
+.message-composer { flex: 0 0 auto; padding-top: 8px; border-top: 1px solid #e5ebf2; }
+.message-author { display: block; margin-bottom: 5px; color: #64748b; font-size: 11px; }
+.message-composer textarea { display: block; width: 100%; resize: vertical; min-height: 58px; max-height: 140px; padding: 8px; border: 1px solid #dce4ee; border-radius: 8px; background: #fff; color: inherit; font: inherit; }
+.message-composer > div { margin-top: 6px; color: #64748b; font-size: 11px; }
+.message-composer button { color: #fff; background: #2563eb; font-size: 13px; }
+.message-composer button:hover { background: #1d4ed8; }
+.message-chit { border: 0; background: #2563eb; box-shadow: inset 0 0 0 1px #fff; clip-path: polygon(0 0, 100% 0, 100% 100%); cursor: pointer; }
+.message-chit:focus-visible { background: #f59e0b; }
+
 @media (max-width: 360px) {
   .map-controls { padding: 10px; }
   .map-actions summary, .map-actions > button { padding: 8px 1px; font-size: 11px; }
+  .map-controls .repo-link span { display: none; }
+  .board-message header { flex-wrap: wrap; }
 }
 @media (pointer: coarse) {
   .map-controls .leaflet-control-zoom a { width: 40px; height: 40px; }
   .map-controls .repo-link, .map-controls .account-control button { min-height: 40px; }
   .map-controls .leaflet-control-search input.search-input { font-size: 16px; }
   .map-controls .leaflet-control-layers label { min-height: 44px; }
+  .message-panel button { min-height: 40px; }
+  .message-composer textarea { font-size: 16px; }
 }

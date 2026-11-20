@@ -15,6 +15,8 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
   lookup, zoom, and a link to this fork on GitHub.
 * Cell-aligned level markers: translucent, region-colored circles that scale
   with map zoom instead of oversized pins, with hover and selection highlights.
+* [Shared message boards](#messages): signed cell discussions, general chat,
+  progress-aware spoiler controls, and optional cell-corner message chits.
 * [Automated deployment](#github-pages-deployment): GitHub Actions publishes
   changes on `main` to this fork's GitHub Pages site.
 
@@ -97,6 +99,48 @@ full-profile saves use last-write-wins behavior.
 See [FIREBASE_SETUP.md](FIREBASE_SETUP.md) to create the independent OOTSS
 database and enable Google login. Until configured, guest saves keep working
 and the top-right **Firebase setup** link provides configuration guidance.
+
+## Messages
+
+Use the speech-bubble button beside the zoom controls to open or close the
+**Messages** panel below the primary dock. All signed-in users can read and
+post; guests keep their map functionality but cannot access shared messages.
+
+**Cell Discussions** shows the latest messages from every cell when nothing
+is selected. Click a map cell while the panel is open, choose **Discuss This
+Cell** in a marker popup, or click a message's address to open that cell's
+independent board. **All Cells** returns to the latest feed. Addresses retain
+their map prefixes, so discussions on `O`, `OH`, `OL`, `I`, `S`, `M`, `MH`, and
+`ML` never overlap. **General Chat** is a separate stream without a cell address.
+
+Messages show the author's Google display name and a timestamp, oldest first.
+The latest 50 are loaded initially; **Load Older Messages** retrieves earlier
+history. New posts appear in real time while the panel is open. Posts are plain
+text, up to 4,000 characters, and append-only. Drafts survive closing the panel
+and switching streams during this page session; they are not included in map
+save files. Wait for **Sending...** to finish before leaving or signing out.
+
+Cell messages are obscured if the current profile's fog covers their screen,
+or if any puzzle at that exact cell is not marked solved. Turning fog off
+exposes screen-related messages, but does **not** expose unsolved-puzzle
+messages. **Show Spoiler** reveals just that message; **Hide Spoiler** covers it
+again. Closing or changing the discussion resets explicit reveals.
+General chat has no automatic cell-based spoiler masking.
+This is a reading convenience, not a security boundary: signed-in users share
+access to the messages, but never to each other's private progress documents.
+
+Enable **Cell Messages** in **Layers** to show small blue corner chits on cells
+with discussions. Clicking a chit opens that cell's board, without activating
+the level icon. Chits stay in the cell's upper-right corner as you zoom, and
+respect fog coverage. The layer uses a lightweight per-map board directory,
+not the latest-feed limit, so older discussions still get a chit.
+
+Shared messaging uses the existing OOTSS Firebase project. Publish the updated
+rules and create the collection-group index described in
+[FIREBASE_SETUP.md](FIREBASE_SETUP.md#shared-messaging-setup-for-existing-projects).
+GitHub Pages deployment does not automatically publish database rules/indexes.
+Messages are stored separately from settings; importing, exporting, or resetting
+map progress does not change anyone's posts.
 
 ## GitHub Pages deployment
 

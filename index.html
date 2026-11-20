@@ -23,6 +23,7 @@
 <script src="js/lib/imageSearch/image_search.js"></script>
 <script src="js/grid_coordinates.js"></script>
 <script src="js/fog_of_war.js"></script>
+<script src="js/message_board.js"></script>
 <script src="js/level_markers.js"></script>
 <script src="js/firebase_config.js"></script>
 <script src="js/settings_sync.js"></script>
@@ -717,11 +718,16 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
   <symbol id="ui-plus" viewBox="0 0 24 24"><path d="M12 5v14 M5 12h14"/></symbol>
   <symbol id="ui-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
   <symbol id="ui-repository" viewBox="0 0 24 24"><circle cx="6" cy="4" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="20" r="2"/><path d="M6 6v12 M18 8v2a6 6 0 0 1-6 6H6"/></symbol>
+  <symbol id="ui-messages" viewBox="0 0 24 24"><path d="M3 4h18v13H9l-6 4Z M7 8h10 M7 12h7"/></symbol>
 </svg>
+<div id="map-dock" class="map-dock">
 <div id="map-controls" class="map-controls leaflet-control" role="region" aria-label="Map controls">
   <div class="map-controls-header">
     <span class="map-controls-title">OOTSS Map</span>
     <div id="map-zoom"></div>
+    <button id="messages-toggle" type="button" aria-label="Open Messages" aria-expanded="false" aria-controls="message-panel" title="Open Messages" disabled>
+      <svg aria-hidden="true"><use href="#ui-messages"/></svg>
+    </button>
     <a class="repo-link" href="https://github.com/natoverse/ootss" target="_blank" rel="noopener noreferrer" title="Open the natoverse/ootss fork on GitHub">
       <svg aria-hidden="true"><use href="#ui-repository"/></svg><span>GitHub</span>
     </a>
@@ -755,6 +761,7 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
     <input type="file" id="file" accept="image/*" hidden>
   </div>
   <div id="map-address"></div>
+  <p id="message-layer-status" class="message-error" role="status" hidden></p>
   <div id="account-control" class="account-control">
     <span id="account-user" class="account-user"></span>
     <button id="account-status" type="button">Loading Settings...</button>
@@ -762,6 +769,30 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
     <button id="google-sign-out" type="button" hidden>Sign Out</button>
     <a id="firebase-setup-link" href="https://github.com/natoverse/ootss/blob/main/FIREBASE_SETUP.md" target="_blank" rel="noopener noreferrer">Firebase Setup</a>
   </div>
+</div>
+<section id="message-panel" class="message-panel leaflet-control" aria-label="Message board" hidden>
+  <header class="message-panel-header">
+    <strong>Messages</strong>
+    <button type="button" data-message-action="close" aria-label="Close message board"><svg aria-hidden="true"><use href="#ui-close"/></svg></button>
+  </header>
+  <div class="message-modes" aria-label="Message streams">
+    <button type="button" data-message-mode="cells" aria-pressed="true">Cell Discussions</button>
+    <button type="button" data-message-mode="general" aria-pressed="false">General Chat</button>
+  </div>
+  <div class="message-context">
+    <span class="message-selection">Latest messages from all cells</span>
+    <button type="button" data-message-action="all" hidden>All Cells</button>
+  </div>
+  <p class="message-status" role="status"></p>
+  <button type="button" data-message-action="retry" hidden>Retry Messages</button>
+  <button type="button" data-message-action="older" hidden>Load Older Messages</button>
+  <div class="message-list" role="log" aria-live="off" aria-label="Messages, oldest first"></div>
+  <form class="message-composer">
+    <label for="message-draft" class="message-author"></label>
+    <textarea id="message-draft" rows="3" maxlength="4000" aria-label="Write a message" placeholder="Select a cell on the map to start a discussion"></textarea>
+    <div><span>Up to 4,000 characters</span><button type="submit" data-message-action="send">Send</button></div>
+  </form>
+</section>
 </div>
 <div id="account-notice" class="account-notice" hidden>
   <div>
@@ -778,6 +809,12 @@ let localDataName = 'joricsOotSS';
 let localData = {};
 let settings = localData;
 let settingsAccount = null;
+let messageBoard = null;
+let messageChitLayer = null;
+let messageChitUnsubscribe = null;
+let messageChitGeneration = 0;
+let messageSelection = null;
+let selectingMessageCell = false;
 
 let tileset_base = location.protocol === 'file:' ? '../ootss_tileset' : 'https://joric.github.io/ootss_tileset';
 
@@ -1686,6 +1723,7 @@ function updateMarkers() {
   })
 
   markItems();
+  refreshMessageChits();
 }
 
 
@@ -1715,6 +1753,7 @@ function markItems() {
     }
   }
   map.eachLayer(walk);
+  if (messageBoard && !messageBoard.root.hidden) messageBoard.render();
 }
 
 function toggleFound(id) {
@@ -1757,6 +1796,8 @@ function baseLayerChange(name) {
   updateCRS(name);
   updateZoom();
   updateMarkers();
+  if (!selectingMessageCell) messageBoard?.clearCell();
+  listenForMessageChits();
 }
 
 const getCoordinates = marker => marker.feature.geometry.coordinates.map(String).join(',');
@@ -1919,6 +1960,9 @@ function openPopup(e) {
     + `<p><input type=checkbox id="${cid}" onclick=toggleFound("${cid}")${settings.markedItems[cid]==true?' checked':''}>`
     + `<label for="${cid}">Solved</label>`;
   }
+
+  const cellAddress = GridCoordinates.address(config[getBaseLayer(feature)], marker.getLatLng());
+  if (cellAddress) content += `<p><button type="button" onclick="messageBoard.selectCell('${cellAddress}', true)">Discuss This Cell</button></p>`;
 
   marker.unbindPopup();
   marker.bindPopup(content, { offset: [0,5], maxWidth: 360, minWidth: 360 });
@@ -2110,7 +2154,7 @@ function addGridAddressControl() {
     },
 
     _onMouseLeave(event) {
-      if (event.relatedTarget instanceof Node && document.getElementById('map-controls').contains(event.relatedTarget)) return;
+      if (event.relatedTarget instanceof Node && document.getElementById('map-dock').contains(event.relatedTarget)) return;
       this._point = null;
       this.update();
     },
@@ -2227,6 +2271,8 @@ function initializeMapControls(zoomControl, mapControl, layerControl, searchCont
     });
   });
   document.getElementById('drop').addEventListener('click', closeMenus);
+  document.getElementById('messages-toggle').addEventListener('click', closeMenus);
+  document.getElementById('message-panel').addEventListener('pointerdown', closeMenus);
   document.addEventListener('click', event => {
     if (!controls.contains(event.target)) closeMenus();
   });
@@ -2246,6 +2292,112 @@ function initializeMapControls(zoomControl, mapControl, layerControl, searchCont
   }, true);
   L.DomEvent.disableClickPropagation(controls);
   L.DomEvent.disableScrollPropagation(controls);
+}
+
+function resizeMessageChits() {
+  messageChitLayer?.eachLayer(marker => {
+    const size = Math.min(12, LevelMarkers.layout(map, marker.getLatLng()).iconSize[0] / .9 * .16);
+    marker.options.icon.options.iconSize = [size, size];
+    marker.options.icon.options.iconAnchor = [size / 2, size / 2];
+    const icon = marker.getElement();
+    if (icon) {
+      icon.style.width = icon.style.height = `${size}px`;
+      icon.style.marginLeft = icon.style.marginTop = `${-size / 2}px`;
+    }
+  });
+}
+
+function refreshMessageChits() {
+  messageChitLayer?.eachLayer(marker => {
+    const icon = marker.getElement();
+    if (icon) icon.style.visibility = FogOfWar.isObscured(settings, marker.messageScreen) ? 'hidden' : 'visible';
+  });
+}
+
+function listenForMessageChits() {
+  const generation = ++messageChitGeneration;
+  messageChitUnsubscribe?.();
+  messageChitUnsubscribe = null;
+  messageChitLayer?.clearLayers();
+  const status = document.getElementById('message-layer-status');
+  status.hidden = true;
+  if (!messageBoard || !map.hasLayer(messageChitLayer)) return;
+  if (!settingsAccount.user) {
+    status.textContent = 'Sign in with Google to show cell message markers.';
+    status.hidden = false;
+    return;
+  }
+  if (!settingsAccount.client?.messages) {
+    status.textContent = 'Messaging could not initialize. Reload the app before enabling Cell Messages.';
+    status.hidden = false;
+    return;
+  }
+  status.textContent = 'Loading cell message markers...';
+  status.hidden = false;
+  messageChitUnsubscribe = settingsAccount.client.messages.listenCells(config[baseLayerName].addressPrefix, addresses => {
+    if (generation !== messageChitGeneration) return;
+    messageChitLayer.clearLayers();
+    for (const address of addresses) {
+      const cell = messageBoard.model.resolve(address);
+      if (!cell || cell.layer !== baseLayerName) throw new Error('A cell message marker has an invalid address.');
+      const marker = L.marker([cell.latlng.lat + .4, cell.latlng.lng + .4], {
+        pane: 'messageChits',
+        title: `Read messages for ${address}`,
+        alt: `Read messages for ${address}`,
+        bubblingMouseEvents: false,
+        icon: L.divIcon({ className: 'message-chit', iconSize: [1, 1], iconAnchor: [.5, .5] }),
+      });
+      marker.messageScreen = cell.screen;
+      marker.on('click', () => {
+        map.closePopup();
+        messageBoard.selectCell(address, true);
+      });
+      marker.addTo(messageChitLayer);
+    }
+    resizeMessageChits();
+    refreshMessageChits();
+    status.hidden = true;
+  }, error => {
+    if (generation !== messageChitGeneration) return;
+    console.error('Cell message markers failed:', error);
+    messageChitLayer.clearLayers();
+    status.textContent = `Cell message markers: ${error.message || String(error)}. Toggle Cell Messages off and on to retry.`;
+    status.hidden = false;
+  });
+}
+
+function initializeMessages() {
+  document.getElementById('messages-toggle').disabled = false;
+  messageBoard = new MessageBoards.Panel({
+    root: document.getElementById('message-panel'),
+    toggle: document.getElementById('messages-toggle'),
+    account: settingsAccount,
+    model: new MessageBoards.Model({ configs: config, features: allFeatures, layerForFeature: getBaseLayer, completionId: baseName }),
+    getSettings: () => settings,
+    onSelectCell(cell) {
+      if (messageSelection) { map.removeLayer(messageSelection); messageSelection = null; }
+      if (!cell) return;
+      selectingMessageCell = true;
+      try {
+        setBaseLayer(cell.layer);
+        if (!map.getBounds().contains(cell.latlng)) map.setView(cell.latlng, Math.max(4, map.getZoom()), { animate: false });
+      } finally { selectingMessageCell = false; }
+      const { lat, lng } = cell.latlng;
+      messageSelection = L.rectangle([[lat - .5, lng - .5], [lat + .5, lng + .5]], {
+        pane: 'messageSelection', interactive: false, color: '#2563eb', weight: 2, fillOpacity: .1,
+      }).addTo(map);
+    },
+  });
+  const panel = document.getElementById('message-panel');
+  L.DomEvent.disableClickPropagation(panel);
+  L.DomEvent.disableScrollPropagation(panel);
+  map.on('click', event => {
+    if (panel.hidden) return;
+    const address = GridCoordinates.address(config[baseLayerName], event.latlng);
+    if (address) messageBoard.selectCell(address);
+  });
+  map.on('zoomend', resizeMessageChits);
+  listenForMessageChits();
 }
 
 function drawMap() {
@@ -2330,6 +2482,7 @@ function drawMap() {
     addGrid();
     updateMarkers();
     saveSettings();
+    if (e.layer === messageChitLayer) listenForMessageChits();
   });
 
   map.on('overlayremove', function(e) {
@@ -2341,6 +2494,7 @@ function drawMap() {
     }
     gridAddressControl?.update();
     saveSettings();
+    if (e.layer === messageChitLayer) listenForMessageChits();
   });
 
   map.on('baselayerchange', function(e) {
@@ -2437,7 +2591,9 @@ function drawMap() {
     }
 
     // pre-create groups
-    for (const group of ['labels','levels','freezers','teleporters','logs','treasures','signs']) {
+    map.createPane('messageChits').style.zIndex = 650;
+    map.createPane('messageSelection').style.zIndex = 770;
+    for (const group of ['labels','levels','cell_messages','freezers','teleporters','logs','treasures','signs']) {
       if (!layers[group]) {
         layers[group] = L.layerGroup();
         layers[group].id = group;
@@ -2445,6 +2601,7 @@ function drawMap() {
           layers[group].addTo(markerGroup);
         }
       }
+      messageChitLayer = layers.cell_messages;
     }
 
     for (const feature of allFeatures) {
@@ -2533,6 +2690,11 @@ function drawMap() {
       })
 
       marker.on('click', openPopup);
+      marker.on('click', () => {
+        if (!messageBoard || messageBoard.root.hidden) return;
+        const address = GridCoordinates.address(config[getBaseLayer(feature)], marker.getLatLng());
+        if (address) messageBoard.selectCell(address);
+      });
 
       marker.addTo(layers[group]);
 
@@ -2564,7 +2726,7 @@ function drawMap() {
     // update overlay names to include count
     var overlaysWithCounts = Object.fromEntries(
       Object.entries(layers).map(([name, layer]) => {
-        if (layer === gridLayer || layer === fogLayer) return [formatLayerName(name), layer];
+        if (layer === gridLayer || layer === fogLayer || layer === messageChitLayer) return [formatLayerName(name), layer];
         const hasMarkers = layer.getLayers ? layer.getLayers().some(l => l instanceof L.Marker) : layer instanceof L.Marker;
         const count = layer.getLayers ? layer.getLayers().filter(l => l instanceof L.Marker).length : (layer instanceof L.Marker ? 1 : 0);
         return [`${formatLayerName(name)}${hasMarkers ? ' ('+count+')' : ''}`, layer];
@@ -2649,6 +2811,7 @@ function drawMap() {
     });
 
     initializeMapControls(zoomControl, mapcontrol, layercontrol, searchControl);
+    initializeMessages();
 
     initImageSearch(matches=>{
       if (matches && matches.length>0) {

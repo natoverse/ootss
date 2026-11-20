@@ -202,6 +202,7 @@ const SettingsAccount = (() => {
       this.showNotice('Saving changes before signing out...');
       try {
         if (this.sync) await timeout(this.sync.flush(), 'Changes have not synced yet. Stay signed in, reconnect, and retry. You can export a settings backup.');
+        if (this.client.messages) await timeout(this.client.messages.flush(), 'Messages have not synced yet. Reconnect before signing out.');
         await this.client.signOut();
       } catch (error) {
         this.report(error);

@@ -1,3 +1,5 @@
+import { createMessageClient } from './message_client.mjs';
+
 export async function createFirebaseClient(config, decodeSettings) {
   const [appSdk, authSdk, firestoreSdk] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js'),
@@ -22,6 +24,7 @@ export async function createFirebaseClient(config, decodeSettings) {
   const settingsDocument = uid => firestoreSdk.doc(db, 'users', uid, 'settings', 'ootss');
 
   return {
+    messages: createMessageClient(db, auth, firestoreSdk),
     observeAuth: (callback, onError) => authSdk.onAuthStateChanged(auth, callback, onError),
     signIn: () => authSdk.signInWithPopup(auth, provider),
     signOut: () => authSdk.signOut(auth),

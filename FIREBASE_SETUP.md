@@ -84,9 +84,54 @@ reliable invitation-only access restriction for this app.
 2. Select **Publish**.
 
 Publish these rules **before enabling the Firebase-backed deployment**.
-They allow an authenticated user to access only their own settings document,
-validate its outer structure, and deny all other database paths. They do not
-allow public reads or writes. No custom indexes are needed.
+They allow authenticated users to access their own settings document and the
+shared message boards, validate writes, and deny unrelated database paths.
+Guests cannot read or write cloud data. Private settings remain isolated.
+Shared messaging also needs the index below.
+
+## Shared messaging setup for existing projects
+
+This uses the **existing OOTSS Firebase project** and the same six GitHub secrets.
+Do not create another database, change Google Cloud IAM roles, or add credentials.
+All users who can sign in are allowed to participate; there is no invitation list.
+
+1. In **Firebase Console > Build > Firestore Database > Rules**, replace the
+   rules with the current [`firestore.rules`](firestore.rules) and **Publish**.
+   Keep the private settings rules; do not replace them with an unrestricted
+   `allow read, write`.
+2. In **Firestore Database > Indexes > Composite**, choose **Add index**:
+   **Collection ID** `boardMessages`, **Query scope** `Collection group`,
+   field **`kind` Ascending**, field **`createdAt` Descending**. This matches
+   [`firestore.indexes.json`](firestore.indexes.json). Wait until it is enabled.
+3. Refresh the deployed app and sign in. Open **Messages**, select a cell, and
+   send a short message. Another signed-in account should see the post and your
+   Google display name; **General Chat** should remain a separate stream.
+4. Enable **Layers > Cell Messages** and verify a corner chit appears on that
+   cell. Clicking the chit should open its discussion rather than its level popup.
+5. Verify that the second account's unsolved puzzles/fog obscure the body of
+   the message, and **Show Spoiler** reveals it.
+
+The app atomically creates an append-only message at
+`/boards/{cellAddress}/boardMessages/{messageId}` and updates that board's
+directory document. General chat uses `/boards/general/boardMessages`.
+Messages contain the sender UID, display name, plain text, and server timestamp.
+The directory contains only the map prefix, board kind, last message ID and
+update timestamp; per-map directory queries support cell chits without reading
+every message. A collection-group query provides the latest cell-message feed.
+User settings stay at `/users/{uid}/settings/ootss`.
+
+Firestore rules bind each new message to the authenticated sender's UID and
+token display name, require server-generated timestamps and a matching directory
+update, and reject edits, deletes, malformed addresses and oversized posts.
+Google display names are not unique. Use trusted devices: Firestore's persistent
+cache can retain messages after a session ends. Spoiler masking is client-side
+presentation, not permission-based access to message bodies.
+
+**GitHub Actions tests the rules but does not deploy rules or indexes to your
+Firebase project.** If messaging reports permission denied, publish the updated
+rules. If the latest feed reports a missing index, create the index above or use
+the Firebase Console link in the error. Cell discussions and general chat use
+ordinary collection indexes; the latest feed requires collection-group scope.
 
 ## Optional: Google Cloud Console API checks
 

@@ -32,7 +32,7 @@ jobs:
           java-version: '21'
 
       - name: Test Firebase user isolation
-        run: npx --yes firebase-tools@15.37.0 emulators:exec --project demo-ootss --only auth,firestore "node --test tests/firestore_rules.test.cjs"
+        run: npx --yes firebase-tools@15.37.0 emulators:exec --project demo-ootss --only auth,firestore "node --test tests/firestore_rules.test.cjs tests/message_rules.test.cjs"
 
       - name: Prepare static site
         run: |
