@@ -1387,17 +1387,17 @@ function getCentroidRaw2(points) {
 // [?] skipping_stones: 126x101, grid cell is 9x6 units, 14x16.83 cells, needs checking (total 126x101 in info)
 
 let config = {
-  overworld: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [-4,10], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", addressPrefix: "O", urlTemplate: "tiles/overworld_64k/{z}/{y}/{x}.webp" },
-  overworld_high: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [10,75], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", addressPrefix: "H", urlTemplate: "tiles/sky_64k/{z}/{y}/{x}.webp" },
-  overworld_low: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [-57, -4], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", addressPrefix: "L", urlTemplate: "tiles/underworld_64k/{z}/{y}/{x}.webp" },
+  overworld: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [-4,10], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", addressPrefix: "O", addressOrigin: [5, 5], urlTemplate: "tiles/overworld_64k/{z}/{y}/{x}.webp" },
+  overworld_high: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [10,75], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", addressPrefix: "OH", addressOrigin: [5, 5], urlTemplate: "tiles/sky_64k/{z}/{y}/{x}.webp" },
+  overworld_low: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [-57, -4], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", addressPrefix: "OL", addressOrigin: [5, 5], urlTemplate: "tiles/underworld_64k/{z}/{y}/{x}.webp" },
 
-  intro: {bounds: { "left": -50.0, "top": 126.0, "right": 140.0, "bottom": -63.0},size:[91, 105], corner: [0, -21], grid: [13, 7], group: "intro", urlTemplate: "tiles/intro_64k/{z}/{y}/{x}.webp" },
+  intro: {bounds: { "left": -50.0, "top": 126.0, "right": 140.0, "bottom": -63.0},size:[91, 105], corner: [0, -21], grid: [13, 7], group: "intro", addressPrefix: "I", addressOrigin: [3, 0], urlTemplate: "tiles/intro_64k/{z}/{y}/{x}.webp" },
 
-  minimap: {bounds: {"left": 34.55, "top": 139.45, "right": 84.45, "bottom": 103.55 }, size:[50,36], corner: [35, 104], grid: [5, 3], heightRange: [89, 89], overlay: true, group: "overworld", url:"images/minimap.jpg" },
-  minimap_high: {bounds: {"left": 34.55, "top": 139.45, "right": 84.45, "bottom": 103.55 }, size:[50,36], corner: [35, 104], grid: [5, 3], heightRange: [104, 110], overlay: true, group: "overworld",url:"images/minimap_high.jpg" },
-  minimap_low: {bounds: {"left": 34.55, "top": 139.45, "right": 84.45, "bottom": 103.55 }, size:[50,36], corner: [35, 104], grid: [5, 3], heightRange: [78, 78], overlay: true, group: "overworld", url:"images/minimap_low.jpg" },
+  minimap: {bounds: {"left": 34.55, "top": 139.45, "right": 84.45, "bottom": 103.55 }, size:[50,36], corner: [35, 104], grid: [5, 3], heightRange: [89, 89], overlay: true, group: "overworld", addressPrefix: "M", addressOrigin: [5, 5], url:"images/minimap.jpg" },
+  minimap_high: {bounds: {"left": 34.55, "top": 139.45, "right": 84.45, "bottom": 103.55 }, size:[50,36], corner: [35, 104], grid: [5, 3], heightRange: [104, 110], overlay: true, group: "overworld", addressPrefix: "MH", addressOrigin: [5, 5], url:"images/minimap_high.jpg" },
+  minimap_low: {bounds: {"left": 34.55, "top": 139.45, "right": 84.45, "bottom": 103.55 }, size:[50,36], corner: [35, 104], grid: [5, 3], heightRange: [78, 78], overlay: true, group: "overworld", addressPrefix: "ML", addressOrigin: [5, 5], url:"images/minimap_low.jpg" },
 
-  skipping_stones: {bounds: { "left": -25.0, "bottom": -17.0, "right": 101.0, "top": 84}, size:[126, 101], corner: [-25, -17], grid: [9, 6], overlay: true, group: "skipping_stones", url:"images/stones.jpg" },
+  skipping_stones: {bounds: { "left": -25.0, "bottom": -17.0, "right": 101.0, "top": 84}, size:[126, 101], corner: [-25,-17], grid: [9, 6], overlay: true, group: "skipping_stones", addressPrefix: "S", addressOrigin: [5, 13], url:"images/stones.jpg" },
 }
 
 const locationSeparator = '@';
@@ -1872,20 +1872,19 @@ function addGrid() {
             if (y % gh === 0) continue;
             gridLayer.addLayer(L.polyline([[cy + y + dy, cx + dx], [cy + y + dy, cx + w + dx]], cellStyle));
         }
-        for (let y = 0; y < h / gh; y++) {
-            for (let x = 0; x < w / gw; x++) {
-                gridLayer.addLayer(L.marker([cy + (y + 1) * gh - 1.5, cx + x * gw + 0.5], {
-                    pane: 'gridLabels',
-                    interactive: false,
-                    keyboard: false,
-                    icon: L.divIcon({
-                        className: 'screen-grid-label',
-                        html: GridCoordinates.screenAddress(x, y, conf.addressPrefix),
-                        iconSize: null,
-                        iconAnchor: [0, 0],
-                    }),
-                }));
-            }
+        for (const screen of GridCoordinates.screens(conf)) {
+            const [[, left], [top]] = screen.bounds;
+            gridLayer.addLayer(L.marker([top - 1, left + 1], {
+                pane: 'gridLabels',
+                interactive: false,
+                keyboard: false,
+                icon: L.divIcon({
+                    className: 'screen-grid-label',
+                    html: screen.address,
+                    iconSize: null,
+                    iconAnchor: [0, 0],
+                }),
+            }));
         }
     }
 
@@ -1894,6 +1893,10 @@ function addGrid() {
 
     for (let y = cy; y <= cy + h; y += gh)
         gridLayer.addLayer(L.polyline([[y + dy, cx + dx], [y + dy, cx + w + dx]], style));
+    if (w % gw !== 0)
+        gridLayer.addLayer(L.polyline([[cy + dy, cx + w + dx], [cy + h + dy, cx + w + dx]], style));
+    if (h % gh !== 0)
+        gridLayer.addLayer(L.polyline([[cy + h + dy, cx + dx], [cy + h + dy, cx + w + dx]], style));
 }
 
 function addGridAddressControl() {
@@ -1902,7 +1905,7 @@ function addGridAddressControl() {
 
     onAdd(map) {
       this._container = L.DomUtil.create('div', 'grid-address-control');
-      this._container.title = 'Screen X/Y from Crossroads, then cell X/Y from the lower left';
+      this._container.title = 'Map code, signed screen X/Y from the starting screen, then cell X/Y from the lower left';
       this._point = null;
       L.DomEvent.on(map.getContainer(), 'mousemove', this._onMouseMove, this);
       L.DomEvent.on(map.getContainer(), 'mouseleave', this._onMouseLeave, this);
@@ -1950,48 +1953,39 @@ function updateFog() {
   hoverPreview.hide();
   const conf = config[baseLayerName];
   if (GridCoordinates.supports(conf)) {
-    const [width, height] = conf.size;
-    const [screenWidth, screenHeight] = conf.grid;
-    const [left, bottom] = conf.corner.map(value => value - 0.5);
-    for (let y = 0; y < height / screenHeight; y++) {
-      for (let x = 0; x < width / screenWidth; x++) {
-        const address = GridCoordinates.screenAddress(x, y, conf.addressPrefix);
-        const screenLeft = left + x * screenWidth;
-        const screenBottom = bottom + y * screenHeight;
-        const top = screenBottom + screenHeight;
-        const right = screenLeft + screenWidth;
-        const cloud = L.imageOverlay('assets/fog.svg', [[screenBottom, screenLeft], [top, right]], {
-          pane: 'fog',
-          interactive: true,
-          alt: `Unexplored screen ${address}`,
+    for (const { address, bounds } of GridCoordinates.screens(conf)) {
+      const [, [top, right]] = bounds;
+      const cloud = L.imageOverlay('assets/fog.svg', bounds, {
+        pane: 'fog',
+        interactive: true,
+        alt: `Unexplored screen ${address}`,
+      });
+      if (FogOfWar.isObscured(settings, address)) fogLayer.addLayer(cloud);
+      const control = L.marker([top - 0.5, right - 0.5], {
+        pane: 'fogControls',
+        keyboard: false,
+        icon: L.divIcon({
+          className: 'fog-screen-control',
+          iconSize: [38, 24],
+          iconAnchor: [38, 0],
+          html: `<label class="fog-screen-toggle" title="Uncheck to reveal ${address}; check to obscure it"><input type="checkbox" aria-label="Fog of war for ${address}"${settings.revealedScreens[address] === true ? '' : ' checked'}><span aria-hidden="true">&#9729;</span></label>`,
+        }),
+      });
+      control.on('add', () => {
+        const icon = control.getElement();
+        L.DomEvent.disableClickPropagation(icon);
+        const input = icon.querySelector('input');
+        input.addEventListener('change', () => {
+          settings.revealedScreens[address] = !input.checked;
+          if (input.checked) fogLayer.addLayer(cloud);
+          else fogLayer.removeLayer(cloud);
+          map.closePopup();
+          hoverPreview.hide();
+          updateMarkers();
+          saveSettings();
         });
-        if (FogOfWar.isObscured(settings, address)) fogLayer.addLayer(cloud);
-        const control = L.marker([top - 0.5, right - 0.5], {
-          pane: 'fogControls',
-          keyboard: false,
-          icon: L.divIcon({
-            className: 'fog-screen-control',
-            iconSize: [38, 24],
-            iconAnchor: [38, 0],
-            html: `<label class="fog-screen-toggle" title="Uncheck to reveal ${address}; check to obscure it"><input type="checkbox" aria-label="Fog of war for ${address}"${settings.revealedScreens[address] === true ? '' : ' checked'}><span aria-hidden="true">&#9729;</span></label>`,
-          }),
-        });
-        control.on('add', () => {
-          const icon = control.getElement();
-          L.DomEvent.disableClickPropagation(icon);
-          const input = icon.querySelector('input');
-          input.addEventListener('change', () => {
-            settings.revealedScreens[address] = !input.checked;
-            if (input.checked) fogLayer.addLayer(cloud);
-            else fogLayer.removeLayer(cloud);
-            map.closePopup();
-            hoverPreview.hide();
-            updateMarkers();
-            saveSettings();
-          });
-        });
-        fogLayer.addLayer(control);
-      }
+      });
+      fogLayer.addLayer(control);
     }
   }
   updateMarkers();
@@ -2238,7 +2232,7 @@ function drawMap() {
     fogLayer.id = 'fog';
     updateFog();
     if (settings.fogOfWar) fogLayer.addTo(map);
-    layers['Fog of war'] = fogLayer;
+    layers['fog of war'] = fogLayer;
 
     //layers['polygons'] = polygonLayer;
     //layers['regions'] = regionLayer;

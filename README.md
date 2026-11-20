@@ -7,31 +7,49 @@
 ## Grid addresses
 
 Enable **grid** in the map's layer selector to show screen addresses, a lighter
-19-by-13 cell grid inside each screen, and a live **Cell** address while hovering.
-This applies to the overworld, sky, and underworld maps.
+cell grid inside each screen, and a live **Cell** address while hovering.
+This applies to all map layers.
 
 Addresses combine signed screen X/Y coordinates with cell X/Y letters.
-Crossroads is screen `+0+0`, at zero-based screen `(5,5)` from the lower left
+Each axis includes a sign and two digits, such as `+00` or `-13`.
+Crossroads is screen `+00+00`, at zero-based screen `(5,5)` from the lower left
 of the 10-by-12 screen grid. Screen X ranges from `-5` to `+4`, and screen Y
 from `-5` to `+6`. Within each screen, letters increase right (`A` through `S`)
 and up (`A` through `M`) from `AA` at the lower left.
-Addresses start with a layer code: `O` for overworld, `H` for high (sky), and `L`
-for low (underworld). The center cell of Crossroads is `O+0+0JG` on the overworld;
-zero always displays with a `+` sign.
+The center cell of Crossroads is `O+00+00JG` on the overworld;
+zero always displays with a `+` sign. All layers use letters starting at `AA`
+in each screen's lower-left corner, with their existing calibrated inner grids.
+
+| Layer | Code | Origin screen from lower left (zero-based) | Inner grid |
+|---|---|---|---|
+| Overworld | `O` | `(5,5)` | 19 by 13 |
+| Overworld high | `OH` | `(5,5)` | 19 by 13 |
+| Overworld low | `OL` | `(5,5)` | 19 by 13 |
+| Intro | `I` | `(3,0)` | 13 by 7 |
+| Skipping stones | `S` | `(5,13)` | 9 by 6 |
+| Minimap | `M` | `(5,5)` | 5 by 3 |
+| Minimap high | `MH` | `(5,5)` | 5 by 3 |
+| Minimap low | `ML` | `(5,5)` | 5 by 3 |
+
+Skipping stones has a partial top row in the current calibration; the grid and
+fog are clipped to the map edge. Minimap origins use the currently identified
+entry screen and can be adjusted if further exploration shows otherwise.
 
 ## Fog of war
 
-**Fog of war** is enabled by default in the upper-right layer selector. Clouds
-cover unexplored screens and their markers; only Crossroads starts clear.
+**fog of war** is enabled by default in the upper-right layer selector. Clouds
+cover unexplored screens and their markers; only each layer's origin starts clear.
 Uncheck the cloud checkbox in a screen's upper-right corner to reveal it, or
 check it again to obscure it. This works independently of the **grid** overlay.
 
-Exploration is tracked separately on the overworld, sky, and underworld maps.
-Turning **Fog of war** off reveals the entire map without erasing your progress.
+Exploration is tracked separately on every map layer.
+Turning **fog of war** off reveals the entire map without erasing your progress.
 The `fogOfWar` setting and `revealedScreens` map are stored with completed levels
 in the existing settings JSON. **Settings > Save Settings** exports them, and
 **Settings > Load Settings** restores them. Older settings files default to fog
-enabled with Crossroads clear; **Reset Settings** resets exploration as well.
+enabled with each layer's origin clear; **Reset Settings** resets exploration as well.
+Existing saved `H`/`L` addresses and single-digit screen coordinates are migrated
+automatically to `OH`/`OL` and two-digit coordinates without losing reveal choices.
 
 ## GitHub Pages deployment
 
