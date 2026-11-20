@@ -6,6 +6,8 @@
       <feGaussianBlur stdDeviation="2.5"/>
     </filter>
   </defs>
-  <path fill="#cdd9e6" fill-opacity=".94" d="M0 0h380v260H0z"/>
-  <path filter="url(#wisps)" d="M0 0h380v260H0z"/>
+  <g opacity=".9">
+    <path fill="#cdd9e6" fill-opacity=".94" d="M0 0h380v260H0z"/>
+    <path filter="url(#wisps)" d="M0 0h380v260H0z"/>
+  </g>
 </svg>
