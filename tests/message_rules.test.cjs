@@ -25,7 +25,15 @@ test('Shared message rules bind authors, timestamps and cell summaries without e
       body: JSON.stringify({ idToken: user.idToken, displayName: name, returnSecureToken: true }),
     });
     assert.equal(update.status, 200);
-    return { ...user, ...(await update.json()), name };
+    const signin = await fetch(`${auth}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-key`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: 'emulator-test-only', returnSecureToken: true }),
+    });
+    assert.equal(signin.status, 200);
+    const session = await signin.json();
+    const claims = JSON.parse(Buffer.from(session.idToken.split('.')[1], 'base64url').toString());
+    assert.equal(claims.name, name, 'The emulator session must include the updated display name');
+    return { ...user, ...session, name };
   }
   const owner = await account('board-owner@example.test', 'Board Owner');
   const other = await account('board-other@example.test', 'Board Other');
