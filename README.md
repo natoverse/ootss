@@ -4,6 +4,19 @@
 * Upstream demo: https://joric.github.io/ootss
 * Project wiki: https://github.com/joric/ootss/wiki
 
+## Grid addresses
+
+Enable **grid** in the map's layer selector to show screen addresses, a lighter
+19-by-13 cell grid inside each screen, and a live **Cell** address while hovering.
+This applies to the overworld, sky, and underworld maps.
+
+Addresses combine signed screen X/Y coordinates with cell X/Y letters.
+Crossroads is screen `+0+0`, at zero-based screen `(5,5)` from the lower left
+of the 10-by-12 screen grid. Screen X ranges from `-5` to `+4`, and screen Y
+from `-5` to `+6`. Within each screen, letters increase right (`A` through `S`)
+and up (`A` through `M`) from `AA` at the lower left.
+The center cell of Crossroads is `+0+0JG`; zero always displays with a `+` sign.
+
 ## GitHub Pages deployment
 
 `.github/workflows/pages.yml` publishes the static app on every push to `main`.
