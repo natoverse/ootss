@@ -5,9 +5,9 @@ const GridCoordinates = (() => {
     return conf?.group === 'overworld' && !conf.overlay;
   }
 
-  function screenAddress(x, y) {
+  function screenAddress(x, y, prefix = 'O') {
     const signed = value => `${value >= 0 ? '+' : ''}${value}`;
-    return signed(x - origin[0]) + signed(y - origin[1]);
+    return prefix + signed(x - origin[0]) + signed(y - origin[1]);
   }
 
   function address(conf, latlng) {
@@ -19,11 +19,15 @@ const GridCoordinates = (() => {
     const [screenWidth, screenHeight] = conf.grid;
     if (x < 0 || y < 0 || x >= width || y >= height) return null;
 
-    return screenAddress(Math.floor(x / screenWidth), Math.floor(y / screenHeight))
+    return screenAddress(Math.floor(x / screenWidth), Math.floor(y / screenHeight), conf.addressPrefix)
       + String.fromCharCode(65 + x % screenWidth, 65 + y % screenHeight);
   }
 
-  return { supports, screenAddress, address };
+  function screen(conf, latlng) {
+    return address(conf, latlng)?.slice(0, -2) ?? null;
+  }
+
+  return { supports, screenAddress, address, screen };
 })();
 
 if (typeof module !== 'undefined') module.exports = GridCoordinates;

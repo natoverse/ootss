@@ -22,14 +22,14 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
-      - name: Test grid coordinates
+      - name: Test map features
         run: node --test tests/*.test.cjs
 
       - name: Prepare static site
         run: |
           mkdir _site
           cp index.html play.html .nojekyll LICENSE _site/
-          cp -R js data _site/
+          cp -R js data assets _site/
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

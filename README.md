@@ -15,7 +15,23 @@ Crossroads is screen `+0+0`, at zero-based screen `(5,5)` from the lower left
 of the 10-by-12 screen grid. Screen X ranges from `-5` to `+4`, and screen Y
 from `-5` to `+6`. Within each screen, letters increase right (`A` through `S`)
 and up (`A` through `M`) from `AA` at the lower left.
-The center cell of Crossroads is `+0+0JG`; zero always displays with a `+` sign.
+Addresses start with a layer code: `O` for overworld, `H` for high (sky), and `L`
+for low (underworld). The center cell of Crossroads is `O+0+0JG` on the overworld;
+zero always displays with a `+` sign.
+
+## Fog of war
+
+**Fog of war** is enabled by default in the upper-right layer selector. Clouds
+cover unexplored screens and their markers; only Crossroads starts clear.
+Uncheck the cloud checkbox in a screen's upper-right corner to reveal it, or
+check it again to obscure it. This works independently of the **grid** overlay.
+
+Exploration is tracked separately on the overworld, sky, and underworld maps.
+Turning **Fog of war** off reveals the entire map without erasing your progress.
+The `fogOfWar` setting and `revealedScreens` map are stored with completed levels
+in the existing settings JSON. **Settings > Save Settings** exports them, and
+**Settings > Load Settings** restores them. Older settings files default to fog
+enabled with Crossroads clear; **Reset Settings** resets exploration as well.
 
 ## GitHub Pages deployment
 
@@ -37,7 +53,7 @@ These settings are already configured for `natoverse/ootss`. The workflow grants
 its deployment job `pages: write` and `id-token: write`; no personal access token
 is required. The deployed URL appears in the workflow's deployment environment.
 
-Only `index.html`, `play.html`, `js/`, `data/`, `.nojekyll`, and `LICENSE` are
+Only `index.html`, `play.html`, `js/`, `data/`, `assets/`, `.nojekyll`, and `LICENSE` are
 published. Export scripts and repository configuration are not included.
 The app uses relative paths for its bundled assets, so it works under `/ootss/`.
 Map tiles and level screenshots remain hosted at

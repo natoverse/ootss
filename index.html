@@ -22,6 +22,7 @@
 <script src="js/lib//swiper/swiper-bundle.min.js"></script>
 <script src="js/lib/imageSearch/image_search.js"></script>
 <script src="js/grid_coordinates.js"></script>
+<script src="js/fog_of_war.js"></script>
 
 <script src="js/lib//leaflet/leaflet.min.js"></script>
 <link href="js/lib//leaflet/leaflet.min.css" rel="stylesheet" />
@@ -133,6 +134,27 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 
 .grid-address-control[hidden] {
   display: none;
+}
+
+.fog-screen-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 38px;
+  height: 24px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #8090a5;
+  border-radius: 4px;
+  color: #52657d;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.fog-screen-toggle input {
+  margin: 0;
+  cursor: pointer;
 }
 
 #map {
@@ -612,6 +634,8 @@ let allFeatures = [];
 let enableHoverPreview = false;
 
 settings.hideFound = settings.hideFound || false;
+FogOfWar.initialize(settings);
+saveSettings();
 
 function saveSettings() {
   localStorage.setItem(localDataName, JSON.stringify(localData));
@@ -846,6 +870,7 @@ let layers = {};
 
 let gridLayer = null;
 let gridAddressControl = null;
+let fogLayer = null;
 
 let areaCounters = {};
 
@@ -1362,9 +1387,9 @@ function getCentroidRaw2(points) {
 // [?] skipping_stones: 126x101, grid cell is 9x6 units, 14x16.83 cells, needs checking (total 126x101 in info)
 
 let config = {
-  overworld: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [-4,10], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", urlTemplate: "tiles/overworld_64k/{z}/{y}/{x}.webp" },
-  overworld_high: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [10,75], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", urlTemplate: "tiles/sky_64k/{z}/{y}/{x}.webp" },
-  overworld_low: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [-57, -4], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", urlTemplate: "tiles/underworld_64k/{z}/{y}/{x}.webp" },
+  overworld: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [-4,10], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", addressPrefix: "O", urlTemplate: "tiles/overworld_64k/{z}/{y}/{x}.webp" },
+  overworld_high: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [10,75], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", addressPrefix: "H", urlTemplate: "tiles/sky_64k/{z}/{y}/{x}.webp" },
+  overworld_low: {bounds: { "left": -24.5, "top": 170.5, "right": 165.5, "bottom": -18.5}, heightRange: [-57, -4], size: [190,156], corner: [-24,-2], grid: [19, 13], group: "overworld", addressPrefix: "L", urlTemplate: "tiles/underworld_64k/{z}/{y}/{x}.webp" },
 
   intro: {bounds: { "left": -50.0, "top": 126.0, "right": 140.0, "bottom": -63.0},size:[91, 105], corner: [0, -21], grid: [13, 7], group: "intro", urlTemplate: "tiles/intro_64k/{z}/{y}/{x}.webp" },
 
@@ -1474,11 +1499,13 @@ function updateMarkers() {
   let base = baseLayerName;
   map.eachLayer(function(marker) {
 
-    if (!marker?.feature?.geometry?.coordinates) return;
+    if (!marker._icon || !marker?.feature?.geometry?.coordinates) return;
 
     const baseLayer = getBaseLayer(marker.feature);
 
-    marker._icon.style.visibility = baseLayer == base ? 'visible' : 'hidden';
+    const visibility = baseLayer == base && !isMarkerObscured(marker) ? 'visible' : 'hidden';
+    marker._icon.style.visibility = visibility;
+    if (marker._shadow) marker._shadow.style.visibility = visibility;
 
   })
 
@@ -1545,6 +1572,7 @@ function baseLayerChange(name) {
   map.closePopup();
   baseLayerName = name;
   addGrid();
+  updateFog();
   updateZoom();
   updateMarkers();
   updateCRS(name);
@@ -1595,6 +1623,10 @@ function youTubeId(url) {
 
 function openPopup(e) {
   const marker = e.target;
+  if (isMarkerObscured(marker)) {
+    showAlert('Reveal this screen to view its markers');
+    return;
+  }
   const feature = marker.feature;
   let o = feature.properties;
   let area = getBaseLayer(marker.feature);
@@ -1848,7 +1880,7 @@ function addGrid() {
                     keyboard: false,
                     icon: L.divIcon({
                         className: 'screen-grid-label',
-                        html: GridCoordinates.screenAddress(x, y),
+                        html: GridCoordinates.screenAddress(x, y, conf.addressPrefix),
                         iconSize: null,
                         iconAnchor: [0, 0],
                     }),
@@ -1904,6 +1936,65 @@ function addGridAddressControl() {
     },
   });
   gridAddressControl = new GridAddressControl().addTo(map);
+}
+
+function isMarkerObscured(marker) {
+  const conf = config[getBaseLayer(marker.feature)];
+  return FogOfWar.isObscured(settings, GridCoordinates.screen(conf, marker.getLatLng()));
+}
+
+function updateFog() {
+  if (!fogLayer) return;
+  fogLayer.clearLayers();
+  map.closePopup();
+  hoverPreview.hide();
+  const conf = config[baseLayerName];
+  if (GridCoordinates.supports(conf)) {
+    const [width, height] = conf.size;
+    const [screenWidth, screenHeight] = conf.grid;
+    const [left, bottom] = conf.corner.map(value => value - 0.5);
+    for (let y = 0; y < height / screenHeight; y++) {
+      for (let x = 0; x < width / screenWidth; x++) {
+        const address = GridCoordinates.screenAddress(x, y, conf.addressPrefix);
+        const screenLeft = left + x * screenWidth;
+        const screenBottom = bottom + y * screenHeight;
+        const top = screenBottom + screenHeight;
+        const right = screenLeft + screenWidth;
+        const cloud = L.imageOverlay('assets/fog.svg', [[screenBottom, screenLeft], [top, right]], {
+          pane: 'fog',
+          interactive: true,
+          alt: `Unexplored screen ${address}`,
+        });
+        if (FogOfWar.isObscured(settings, address)) fogLayer.addLayer(cloud);
+        const control = L.marker([top - 0.5, right - 0.5], {
+          pane: 'fogControls',
+          keyboard: false,
+          icon: L.divIcon({
+            className: 'fog-screen-control',
+            iconSize: [38, 24],
+            iconAnchor: [38, 0],
+            html: `<label class="fog-screen-toggle" title="Uncheck to reveal ${address}; check to obscure it"><input type="checkbox" aria-label="Fog of war for ${address}"${settings.revealedScreens[address] === true ? '' : ' checked'}><span aria-hidden="true">&#9729;</span></label>`,
+          }),
+        });
+        control.on('add', () => {
+          const icon = control.getElement();
+          L.DomEvent.disableClickPropagation(icon);
+          const input = icon.querySelector('input');
+          input.addEventListener('change', () => {
+            settings.revealedScreens[address] = !input.checked;
+            if (input.checked) fogLayer.addLayer(cloud);
+            else fogLayer.removeLayer(cloud);
+            map.closePopup();
+            hoverPreview.hide();
+            updateMarkers();
+            saveSettings();
+          });
+        });
+        fogLayer.addLayer(control);
+      }
+    }
+  }
+  updateMarkers();
 }
 
 
@@ -1980,14 +2071,24 @@ function drawMap() {
   });
 
   map.on('overlayadd', function(e) {
-    settings.activeLayers[e.layer.id] = true;
+    if (e.layer === fogLayer) {
+      settings.fogOfWar = true;
+      updateFog();
+    } else {
+      settings.activeLayers[e.layer.id] = true;
+    }
     addGrid();
     updateMarkers();
     saveSettings();
   });
 
   map.on('overlayremove', function(e) {
-    delete settings.activeLayers[e.layer.id];
+    if (e.layer === fogLayer) {
+      settings.fogOfWar = false;
+      updateMarkers();
+    } else {
+      delete settings.activeLayers[e.layer.id];
+    }
     gridAddressControl?.update();
     saveSettings();
   });
@@ -2131,6 +2232,13 @@ function drawMap() {
     addGridAddressControl();
 
     layers['grid'] = gridLayer;
+    map.createPane('fog').style.zIndex = 750;
+    map.createPane('fogControls').style.zIndex = 760;
+    fogLayer = L.layerGroup();
+    fogLayer.id = 'fog';
+    updateFog();
+    if (settings.fogOfWar) fogLayer.addTo(map);
+    layers['Fog of war'] = fogLayer;
 
     //layers['polygons'] = polygonLayer;
     //layers['regions'] = regionLayer;
@@ -2275,7 +2383,7 @@ function drawMap() {
     // update overlay names to include count
     var overlaysWithCounts = Object.fromEntries(
       Object.entries(layers).map(([name, layer]) => {
-        if (name === 'grid') return [name, layer];
+        if (layer === gridLayer || layer === fogLayer) return [name, layer];
         const hasMarkers = layer.getLayers ? layer.getLayers().some(l => l instanceof L.Marker) : layer instanceof L.Marker;
         const count = layer.getLayers ? layer.getLayers().filter(l => l instanceof L.Marker).length : (layer instanceof L.Marker ? 1 : 0);
         return [`${name}${hasMarkers ? ' ('+count+')' : ''}`, layer];
