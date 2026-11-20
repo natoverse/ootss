@@ -23,6 +23,9 @@
 <script src="js/lib/imageSearch/image_search.js"></script>
 <script src="js/grid_coordinates.js"></script>
 <script src="js/fog_of_war.js"></script>
+<script src="js/firebase_config.js"></script>
+<script src="js/settings_sync.js"></script>
+<script src="js/firebase_session.js"></script>
 
 <script src="js/lib//leaflet/leaflet.min.js"></script>
 <link href="js/lib//leaflet/leaflet.min.css" rel="stylesheet" />
@@ -173,6 +176,64 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
   color: #333;
   font: inherit;
   cursor: pointer;
+}
+
+.account-control {
+  position: fixed;
+  top: 10px;
+  right: 58px;
+  z-index: 1100;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 150px);
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  font: 12px/1.4 sans-serif;
+}
+
+.account-control button, .account-notice button {
+  cursor: pointer;
+  font: inherit;
+}
+
+.account-control button:disabled {
+  cursor: default;
+}
+
+.account-control .account-error {
+  color: #a21c1c;
+}
+
+.account-user {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-notice {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(235, 240, 246, 0.95);
+  color: #333;
+  font: 15px/1.5 sans-serif;
+}
+
+.account-notice > div {
+  max-width: 480px;
+  padding: 24px;
+}
+
+.account-control [hidden], .account-notice[hidden], .account-notice [hidden] {
+  display: none;
 }
 
 #map {
@@ -636,12 +697,28 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 
 <div id="hoverPreview"><img title=""><div class="hp-title"></div></div>
 
+<div id="account-control" class="account-control">
+  <span id="account-user" class="account-user"></span>
+  <button id="account-status" type="button">loading settings...</button>
+  <button id="google-sign-in" type="button" disabled>sign in with Google</button>
+  <button id="google-sign-out" type="button" hidden>sign out</button>
+  <a id="firebase-setup-link" href="https://github.com/natoverse/ootss/blob/main/FIREBASE_SETUP.md" target="_blank" rel="noopener noreferrer">Firebase setup</a>
+</div>
+<div id="account-notice" class="account-notice" hidden>
+  <div>
+    <p id="account-message"></p>
+    <button id="account-retry" type="button" hidden>retry</button>
+    <button id="account-export" type="button" hidden>export settings backup</button>
+    <button id="account-reset-local" type="button" hidden>reset guest settings</button>
+  </div>
+</div>
 
 <script>
 
 let localDataName = 'joricsOotSS';
-let localData = JSON.parse(localStorage.getItem(localDataName)) || {};
+let localData = {};
 let settings = localData;
+let settingsAccount = null;
 
 let tileset_base = location.protocol === 'file:' ? '../ootss_tileset' : 'https://joric.github.io/ootss_tileset';
 
@@ -651,17 +728,31 @@ let allFeatures = [];
 
 let enableHoverPreview = false;
 
-settings.hideFound = settings.hideFound || false;
-FogOfWar.initialize(settings);
-saveSettings();
+function setSettings(data) {
+  localData = SettingsStorage.validate(data);
+  settings = localData;
+  settings.hideFound = settings.hideFound || false;
+  FogOfWar.initialize(settings);
+}
 
 function saveSettings() {
-  localStorage.setItem(localDataName, JSON.stringify(localData));
+  try {
+    if (settingsAccount?.sync) settingsAccount.sync.save(settings);
+    else localStorage.setItem(localDataName, JSON.stringify(settings));
+  } catch (error) {
+    settingsAccount?.report(error);
+    throw error;
+  }
 }
 
 function resetLocalData() {
-  localStorage.removeItem(localDataName);
-  location.reload();
+  if (settingsAccount.sync) {
+    setSettings({});
+    settingsAccount.replace().catch(error => console.error('Cloud reset failed:', error));
+  } else {
+    localStorage.removeItem(localDataName);
+    location.reload();
+  }
 }
 
 function loadLocalDataFile() {
@@ -669,17 +760,15 @@ function loadLocalDataFile() {
   if (file) {
     var reader = new FileReader();
     reader.readAsText(file, "UTF-8");
-    reader.onload = function (evt) {
+    reader.onload = async function (evt) {
       let data = evt.target.result;
       evt.target.value = null;
       try {
-        localData = JSON.parse(data);
-        settings = localData;
-        console.log('New settings loaded.');
-        saveSettings();
-        location.reload();
+        setSettings(JSON.parse(data));
+        await settingsAccount.replace();
       } catch(e) {
-        console.log(e);
+        settingsAccount.report(e);
+        settingsAccount.showNotice(`Settings could not be applied: ${e.message}`, true);
       }
     }
     reader.onerror = function (evt) {
@@ -715,8 +804,7 @@ function saveTextToFile(data, filename) {
 }
 
 function saveLocalData() {
-  let data = localStorage.getItem(localDataName);
-  data = JSON.stringify(JSON.parse(data), null, 2);
+  const data = JSON.stringify(settings, null, 2);
   saveTextToFile(data, localDataName+'.json');
 }
 
@@ -2580,7 +2668,7 @@ function updateRegions() {
   }
 }
 
-window.onload = function() {
+function startMap() {
 
   if (location.hash.length>1) {
     let param = decodeURIComponent(location.hash.slice(1));
@@ -2646,6 +2734,21 @@ window.onload = function() {
     drawMap();
   });
 }
+
+window.onload = function() {
+  settingsAccount = new SettingsAccount.Account({
+    key: localDataName,
+    config: window.OotssFirebaseConfig,
+    getSettings: () => settings,
+    exportSettings: saveLocalData,
+    onReady(data) {
+      setSettings(data);
+      saveSettings();
+      startMap();
+    },
+  });
+  settingsAccount.start();
+};
 </script>
 
 </body>
