@@ -157,6 +157,24 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
   cursor: pointer;
 }
 
+.fog-bulk-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #ddd;
+}
+
+.fog-bulk-actions button {
+  padding: 3px 8px;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+  background: #fff;
+  color: #333;
+  font: inherit;
+  cursor: pointer;
+}
+
 #map {
   background-color: #666;
 }
@@ -2388,6 +2406,20 @@ function drawMap() {
     // overlaysWithCounts = Object.fromEntries( Object.entries(overlaysWithCounts).sort((a, b) => a[0].localeCompare(b[0])) );
 
     let layercontrol = L.control.layers(baseLayers, overlaysWithCounts, {collapsed: true, position: 'topright'}).addTo(map);
+    const fogActions = L.DomUtil.create('div', 'fog-bulk-actions',
+      layercontrol.getContainer().querySelector('.leaflet-control-layers-list'));
+    L.DomEvent.on(fogActions, 'keydown', L.DomEvent.stopPropagation);
+    for (const [label, revealed] of [['reveal all', true], ['hide all', false]]) {
+      const button = L.DomUtil.create('button', '', fogActions);
+      button.type = 'button';
+      button.textContent = label;
+      button.title = `${label} on the selected layer; keeps the starting screen clear`;
+      L.DomEvent.on(button, 'click', () => {
+        FogOfWar.setLayerRevealed(settings, config[baseLayerName], revealed);
+        updateFog();
+        saveSettings();
+      });
+    }
 
     const tokenize = s => (s ?? '').toLowerCase().split(/\s+/).filter(Boolean);
 

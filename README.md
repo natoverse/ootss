@@ -42,6 +42,11 @@ cover unexplored screens and their markers; only each layer's origin starts clea
 Uncheck the cloud checkbox in a screen's upper-right corner to reveal it, or
 check it again to obscure it. This works independently of the **grid** overlay.
 
+The upper-right options also include **reveal all** and **hide all** buttons.
+These update the saved screen checkboxes only for the selected map layer, always
+leaving its starting screen clear. They do not change the global **fog of war**
+option or exploration on other layers.
+
 Exploration is tracked separately on every map layer.
 Turning **fog of war** off reveals the entire map without erasing your progress.
 The `fogOfWar` setting and `revealedScreens` map are stored with completed levels

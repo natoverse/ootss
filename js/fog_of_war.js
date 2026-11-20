@@ -26,7 +26,14 @@ const FogOfWar = (() => {
     return settings.fogOfWar && screen !== null && settings.revealedScreens[screen] !== true;
   }
 
-  return { initialize, isObscured };
+  function setLayerRevealed(settings, conf, revealed) {
+    const origin = `${conf.addressPrefix}+00+00`;
+    for (const { address } of coordinates.screens(conf)) {
+      settings.revealedScreens[address] = revealed || address === origin;
+    }
+  }
+
+  return { initialize, isObscured, setLayerRevealed };
 })();
 
 if (typeof module !== 'undefined') module.exports = FogOfWar;

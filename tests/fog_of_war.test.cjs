@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { initialize, isObscured } = require('../js/fog_of_war.js');
+const { initialize, isObscured, setLayerRevealed } = require('../js/fog_of_war.js');
 
 test('older settings start with fog enabled and only the entry screen clear on each layer', () => {
   const settings = { markedItems: { puzzle: true }, activeLayers: { grid: true } };
@@ -87,4 +87,40 @@ test('canonical saved choices take precedence over conflicting legacy keys', () 
   assert.equal(settings.revealedScreens['OH+01-02'], false);
   assert.equal(settings.revealedScreens['S+00+00'], false);
   assert.ok(!Object.hasOwn(settings.revealedScreens, 'H+1-2'));
+});
+
+test('reveal all affects only the selected layer and leaves global options and levels unchanged', () => {
+  const settings = { fogOfWar: false, markedItems: { puzzle: true } };
+  initialize(settings);
+  settings.revealedScreens['OH+01+00'] = false;
+  settings.revealedScreens['O+00+00'] = false;
+  const conf = { corner: [-24, -2], size: [190, 156], grid: [19, 13], addressPrefix: 'O', addressOrigin: [5, 5] };
+  setLayerRevealed(settings, conf, true);
+  const selected = Object.entries(settings.revealedScreens).filter(([key]) => key.startsWith('O+') || key.startsWith('O-'));
+  assert.equal(selected.length, 120);
+  assert.ok(selected.every(([, revealed]) => revealed === true));
+  assert.equal(settings.revealedScreens['OH+01+00'], false);
+  assert.equal(settings.fogOfWar, false);
+  assert.deepEqual(settings.markedItems, { puzzle: true });
+});
+
+test('hide all keeps the selected entry clear and preserves every other layer', () => {
+  const settings = {};
+  initialize(settings);
+  settings.revealedScreens['OH+01+00'] = true;
+  const conf = { corner: [0, -21], size: [91, 105], grid: [13, 7], addressPrefix: 'I', addressOrigin: [3, 0] };
+  setLayerRevealed(settings, conf, true);
+  settings.revealedScreens['I+00+00'] = false;
+  const otherLayers = Object.fromEntries(Object.entries(settings.revealedScreens).filter(([key]) => !key.startsWith('I')));
+  setLayerRevealed(settings, conf, false);
+  const selected = Object.entries(settings.revealedScreens).filter(([key]) => key.startsWith('I'));
+  assert.equal(selected.length, 105);
+  assert.deepEqual(selected.filter(([, revealed]) => revealed), [['I+00+00', true]]);
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(settings.revealedScreens).filter(([key]) => !key.startsWith('I'))),
+    otherLayers,
+  );
+  const imported = JSON.parse(JSON.stringify(settings));
+  initialize(imported);
+  assert.deepEqual(imported, settings);
 });
