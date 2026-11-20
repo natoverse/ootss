@@ -18,7 +18,7 @@ Cloud Console.
 | Website | What you do there |
 |---|---|
 | [Firebase Console](https://console.firebase.google.com/) | Create the project and Firestore database, enable the Google sign-in provider, add authorized domains, publish Firestore rules, register the web app, copy `firebaseConfig`, and inspect saved users/data. |
-| [Google Cloud Console](https://console.cloud.google.com/) | Check or enable underlying APIs only if needed. Select the same OOTSS Project ID you created in Firebase. |
+| [Google Cloud Console](https://console.cloud.google.com/) | Check underlying APIs or manage OAuth test users if needed. Select the same OOTSS Project ID you created in Firebase. |
 | [GitHub: natoverse/ootss](https://github.com/natoverse/ootss) | Add repository secrets and run the deployment workflow. |
 | [Deployed OOTSS app](https://natoverse.github.io/ootss/) | Sign in, change settings, and verify cloud synchronization. |
 
@@ -55,6 +55,27 @@ Every user signs in with their own Google account; Firebase supplies the UID.
 There is no separate Google Calendar authorization or Google client ID to
 configure for this app.
 
+### Google Cloud Console: OAuth test users, if needed
+
+OAuth test users are separate from Firebase Authentication users and Google
+Cloud IAM project members. Ordinary app users need **no IAM roles**: they
+sign in through the app, and Firestore rules grant access to their own profile.
+Do not grant players Owner, Editor, or Firebase Admin access.
+
+If you need to add users to an OAuth application's test list:
+
+1. Open **Google Cloud Console**, with the same OOTSS Project ID selected.
+2. Open **Google Auth Platform > Audience**.
+3. Under **Test users**, select **Add users**.
+4. Enter their Google-account email addresses and select **Save**.
+
+Google documents a standard cap of **100 test users** for an External app in
+Testing mode. It also documents an exception for apps requesting only basic
+identity scopes (`openid`, email, and profile): users do not need to be on the
+test allowlist. OOTSS uses basic Google sign-in without Calendar, Drive, or
+other additional Google API scopes. Do not use the OAuth test list as a
+reliable invitation-only access restriction for this app.
+
 ## 3. Firebase Console: publish the database security rules
 
 1. In **Firebase Console > Build > Firestore Database > Rules**, replace the
@@ -69,8 +90,8 @@ allow public reads or writes. No custom indexes are needed.
 
 ## Optional: Google Cloud Console API checks
 
-**This is the only setup section that uses Google Cloud Console rather than
-Firebase Console.** Use it if an error names `SERVICE_DISABLED` or reports
+**This optional section uses Google Cloud Console rather than Firebase
+Console.** Use it if an error names `SERVICE_DISABLED` or reports
 that a required API is disabled.
 
 1. Open [Google Cloud Console](https://console.cloud.google.com/).
@@ -180,6 +201,8 @@ last-write-wins replacement.
 | Status stays offline or saving | Reconnect and wait for acknowledgment before signing out; export a JSON backup if needed. |
 
 Official references: [Firebase and Google Cloud project relationship](https://firebase.google.com/docs/projects/learn-more),
+[OAuth consent and test users](https://developers.google.com/workspace/guides/configure-oauth-consent),
+[OAuth testing limits and identity-scope exception](https://developers.google.com/identity/protocols/oauth2/production-readiness/overview),
 [enabling Google Cloud APIs](https://docs.cloud.google.com/service-usage/docs/enable-disable),
 [Google sign-in](https://firebase.google.com/docs/auth/web/google-signin),
 [Firestore rules](https://firebase.google.com/docs/firestore/security/rules-conditions),

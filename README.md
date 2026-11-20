@@ -10,6 +10,8 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
   exploration on every layer, and per-screen or bulk reveal/hide controls.
 * [Google accounts and cloud settings](#google-accounts-and-cloud-settings):
   optional Firebase-backed profiles alongside permanent local guest saves.
+* Unified map controls: an upper-right dock for search, layers, settings and
+  game-save tools, screenshot lookup, zoom, and a link to this fork on GitHub.
 * [Automated deployment](#github-pages-deployment): GitHub Actions publishes
   changes on `main` to this fork's GitHub Pages site.
 
