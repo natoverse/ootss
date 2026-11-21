@@ -26,8 +26,6 @@ const LevelMarkers = (() => {
       marginLeft: `${-size / 2}px`,
       marginTop: `${-size / 2}px`,
     });
-    element.style.setProperty('--level-symbol-size', `${Math.min(20, size * 0.4)}px`);
-    element.classList.toggle('level-marker-readable', size >= 16);
     if (marker.isPopupOpen()) marker.getPopup().update();
   }
 

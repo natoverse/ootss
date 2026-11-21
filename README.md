@@ -15,8 +15,8 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
   tools, and a link to this fork on GitHub. Close it with the header's **X** to leave a
   cell-address/completion bar with map-controls and Messages buttons; use the map
   button to reopen it. Zoom with the mouse wheel or a pinch gesture.
-* Cell-aligned level markers: translucent, region-colored circles that scale
-  with map zoom instead of oversized pins, with hover and selection highlights.
+* Cell-aligned level markers: 90%-opaque stars, bright green when unsolved and
+  white when solved, scaling with zoom and retaining hover/selection highlights.
 * Per-screen completion: mark all puzzles solved together, with mixed-state
   checkboxes that preserve individual exceptions.
 * Unsolved puzzle highlighting: bright yellow cells show unfinished puzzles

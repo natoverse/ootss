@@ -11,7 +11,7 @@ function projection(zoom = 0, xScale = 4, yScale = xScale) {
   };
 }
 
-test('circles fit inside one cell and anchor their center, not a pin tip', () => {
+test('star icons fit inside one cell and anchor their center, not a pin tip', () => {
   const layout = LevelMarkers.layout(projection(0, 6, 4), { lat: 74, lng: 80 });
   const size = layout.iconSize[0];
   assert.ok(size > 0 && size < 4);
@@ -21,7 +21,7 @@ test('circles fit inside one cell and anchor their center, not a pin tip', () =>
   assert.deepEqual(layout.tooltipAnchor, [0, -size / 2]);
 });
 
-test('circle diameter follows fractional zoom and the current layer projection', () => {
+test('star size follows fractional zoom and the current layer projection', () => {
   const point = { lat: -18, lng: -24 };
   const initial = LevelMarkers.layout(projection(), point).iconSize[0];
   const zoomed = LevelMarkers.layout(projection(2.5), point).iconSize[0];
@@ -52,8 +52,6 @@ test('resizing preserves marker DOM, completion/visibility/selection state, and 
   assert.equal(Number.parseFloat(element.style.marginLeft), -size / 2);
   assert.equal(Number.parseFloat(element.style.marginTop), -size / 2);
   assert.equal(popupUpdates, 1);
-  assert.ok(classes.has('level-marker-readable'));
   LevelMarkers.resize(marker, projection());
-  assert.ok(!classes.has('level-marker-readable'));
   for (const name of ['found', 'hidden', 'level-marker-selected']) assert.ok(classes.has(name));
 });
