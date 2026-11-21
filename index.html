@@ -2683,6 +2683,8 @@ function drawMap() {
     layers['grid'] = gridLayer;
     map.createPane('fog').style.zIndex = 750;
     map.createPane('fogControls').style.zIndex = 760;
+    map.getPane('tooltipPane').style.zIndex = 780;
+    map.getPane('popupPane').style.zIndex = 790;
     fogLayer = L.layerGroup();
     fogLayer.id = 'fog';
     updateFog();
