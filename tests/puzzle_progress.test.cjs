@@ -46,3 +46,28 @@ test('bulk completion persists in the existing markedItems JSON without another 
   assert.equal(restored.fogOfWar, true);
   assert.deepEqual(restored.revealedScreens, { 'O+00+00': true });
 });
+
+test('unsolved highlights exclude fog-covered cells and other map layers', () => {
+  const settings = { fogOfWar: true, revealedScreens: { 'O+00+00': true }, markedItems: { First: true } };
+  assert.deepEqual(progress.unsolvedCells(conf, settings).map(cell => cell.address), ['O+00+00LG']);
+  settings.fogOfWar = false;
+  assert.deepEqual(progress.unsolvedCells(conf, settings).map(cell => cell.address), ['O+00+00LG', 'O+01+00AG']);
+  settings.fogOfWar = true;
+  progress.setScreenSolved('O+00+00', settings.markedItems, true);
+  assert.deepEqual(progress.unsolvedCells(conf, settings), []);
+  delete settings.markedItems.Second;
+  assert.deepEqual(progress.unsolvedCells(conf, settings).map(cell => cell.address), ['O+00+00LG']);
+});
+
+test('a cell stays highlighted until every puzzle at that cell is solved', () => {
+  const shared = new Index({
+    configs: { overworld: conf },
+    features: [feature('First', 80, 69), feature('Second', 80, 69)],
+    layerForFeature: feature => feature.properties.layer,
+    completionId: name => name,
+  });
+  const settings = { fogOfWar: false, markedItems: { First: true } };
+  assert.equal(shared.unsolvedCells(conf, settings).length, 1);
+  settings.markedItems.Second = true;
+  assert.equal(shared.unsolvedCells(conf, settings).length, 0);
+});

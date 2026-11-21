@@ -17,6 +17,8 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
   with map zoom instead of oversized pins, with hover and selection highlights.
 * Per-screen completion: mark all puzzles solved together, with mixed-state
   checkboxes that preserve individual exceptions.
+* Unsolved puzzle highlighting: bright yellow cells show unfinished puzzles
+  outside fog, independently of the level markers.
 * [Shared message boards](#messages): signed cell discussions, general chat,
   progress-aware spoiler controls, and optional cell-corner message chits.
 * [Automated deployment](#github-pages-deployment): GitHub Actions publishes
@@ -64,7 +66,7 @@ cover unexplored screens and their markers; only each layer's origin starts clea
 Uncheck the cloud checkbox in a screen's upper-right corner to reveal it, or
 check it again to obscure it. This works independently of the **Grid** overlay.
 
-The **All** checkbox immediately below each cloud checkbox marks every puzzle
+The **puzzle-icon checkbox** immediately below each cloud checkbox marks every puzzle
 on that screen solved. A dash means only some puzzles are solved; clicking it
 marks all solved. You can then uncheck an individual puzzle's **Solved** box
 without clearing the others, and the screen checkbox returns to a dash.
@@ -72,6 +74,12 @@ Unchecking a fully checked screen checkbox clears that screen's puzzle flags.
 Empty screens have a disabled completion checkbox. Completion uses the existing
 saved puzzle flags, so it works with guest/cloud profiles and settings imports
 and exports; it does not reveal the screen or change fog settings.
+
+Enable **Highlight Unsolved Puzzles** in **Layers** to turn cells with unfinished
+puzzles bright yellow. Fog-covered cells are excluded; turning fog off treats
+all screens as visible. Highlights disappear when every puzzle at the cell is
+solved and return if you uncheck one. The toggle is saved with your profile and
+works even when **Levels** is hidden.
 
 The **Layers** panel also includes **Reveal All** and **Hide All** buttons.
 These update the saved screen checkboxes only for the selected map layer, always

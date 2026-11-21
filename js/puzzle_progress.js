@@ -1,5 +1,6 @@
 const PuzzleProgress = (() => {
   const coordinates = typeof module === 'undefined' ? GridCoordinates : require('./grid_coordinates.js');
+  const fog = typeof module === 'undefined' ? FogOfWar : require('./fog_of_war.js');
 
   class Index {
     constructor({ configs, features, layerForFeature, completionId }) {
@@ -28,6 +29,18 @@ const PuzzleProgress = (() => {
         checked: ids.size > 0 && solved === ids.size,
         indeterminate: solved > 0 && solved < ids.size,
       };
+    }
+
+    unsolvedCells(conf, settings) {
+      const result = [];
+      for (const [address, ids] of this.cells) {
+        const cell = coordinates.resolve(conf, address);
+        if (cell && !fog.isObscured(settings, cell.screen)
+          && [...ids].some(id => settings.markedItems?.[id] !== true)) {
+          result.push(cell);
+        }
+      }
+      return result;
     }
 
     setScreenSolved(screen, markedItems, solved) {
