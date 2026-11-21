@@ -111,7 +111,7 @@ test('Shared message rules bind authors, timestamps and cell summaries without e
       structuredQuery: {
         from: [{ collectionId: 'boards' }],
         where: { fieldFilter: { field: { fieldPath: 'mapPrefix' }, op: 'EQUAL', value: { stringValue: 'O' } } },
-        limit: 30000,
+        limit: 10000,
       },
     })).status, 200);
   });

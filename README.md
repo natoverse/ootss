@@ -11,8 +11,8 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
 * [Google accounts and cloud settings](#google-accounts-and-cloud-settings):
   optional Firebase-backed profiles alongside permanent local guest saves.
 * Unified map controls: an upper-right dock for map navigation, visibility
-  layers, cell addresses, search, settings and game-save tools, screenshot
-  lookup, zoom, and a link to this fork on GitHub.
+  layers, cell addresses, search, settings and game-save tools, zoom, and a link
+  to this fork on GitHub.
 * Cell-aligned level markers: translucent, region-colored circles that scale
   with map zoom instead of oversized pins, with hover and selection highlights.
 * Per-screen completion: mark all puzzles solved together, with mixed-state
@@ -126,11 +126,15 @@ Use the speech-bubble button beside the zoom controls to open or close the
 post; guests keep their map functionality but cannot access shared messages.
 
 **Cell Discussions** shows the latest messages from every cell when nothing
-is selected. Click a map cell while the panel is open, choose **Discuss This
+is selected. Discussions are available only on cells containing a puzzle,
+freezer, teleporter, log, treasure, or sign, not empty cells or area labels.
+Click an object cell while the panel is open, choose **Discuss This
 Cell** in a marker popup, or click a message's address to open that cell's
 independent board. **All Cells** returns to the latest feed. Addresses retain
 their map prefixes, so discussions on `O`, `OH`, `OL`, `I`, `S`, `M`, `MH`, and
 `ML` never overlap. **General Chat** is a separate stream without a cell address.
+Clicking an empty cell returns to the latest feed. Older messages on empty cells
+remain readable in that feed, but their address buttons no longer open a board.
 
 Messages show the author's Google display name and a timestamp, oldest first.
 The latest 50 are loaded initially; **Load Older Messages** retrieves earlier

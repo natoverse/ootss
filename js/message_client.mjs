@@ -1,5 +1,6 @@
 export function createMessageClient(db, auth, sdk) {
   const pageSize = 50;
+  const directoryLimit = 10000;
   function message(snapshot) {
     const data = snapshot.data({ serverTimestamps: 'estimate' });
     if (typeof data.text !== 'string' || typeof data.authorName !== 'string'
@@ -50,9 +51,14 @@ export function createMessageClient(db, auth, sdk) {
     },
     listenCells(prefix, onUpdate, onError) {
       const source = sdk.collection(db, 'boards');
-      const query = sdk.query(source, sdk.where('mapPrefix', '==', prefix), sdk.limit(30000));
+      const query = sdk.query(source, sdk.where('mapPrefix', '==', prefix), sdk.limit(directoryLimit));
       return sdk.onSnapshot(query, snapshot => {
-        try { onUpdate(snapshot.docs.map(document => document.id)); }
+        try {
+          if (snapshot.docs.length === directoryLimit) {
+            throw new Error('The cell message directory reached its display limit; not all markers can be shown.');
+          }
+          onUpdate(snapshot.docs.map(document => document.id));
+        }
         catch (error) { onError(error); }
       }, onError);
     },

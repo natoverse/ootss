@@ -16,6 +16,11 @@ const MessageBoards = (() => {
       return null;
     }
 
+    canDiscuss(address) {
+      const cell = this.resolve(address);
+      return Boolean(cell && this.progress.objects.has(cell.address));
+    }
+
     spoilers(boardId, settings) {
       if (boardId === 'general') return [];
       const cell = this.resolve(boardId);
@@ -109,6 +114,10 @@ const MessageBoards = (() => {
     selectCell(address, open = false) {
       const cell = address === null ? null : this.model.resolve(address);
       if (address !== null && !cell) throw new Error('This cell address is outside the map.');
+      if (cell && !this.model.canDiscuss(cell.address)) {
+        this.showError(new Error('Cell discussions require a puzzle, freezer, teleporter, log, treasure, or sign.'));
+        return;
+      }
       this.cell = cell;
       this.mode = 'cells';
       if (open && this.root.hidden) this.setOpen(true);
@@ -199,6 +208,10 @@ const MessageBoards = (() => {
       const boardId = this.boardId();
       const draft = this.drafts.get(boardId) || '';
       if (this.sending || !this.account.user || boardId === 'all' || !draft.trim()) return;
+      if (boardId !== 'general' && !this.model.canDiscuss(boardId)) {
+        this.showError(new Error('Messages can only be posted to cells containing map objects. Your draft is retained.'));
+        return;
+      }
       if (!navigator.onLine) {
         this.showError(new Error('Reconnect to send your message. Your draft is retained.'));
         return;
@@ -220,9 +233,10 @@ const MessageBoards = (() => {
 
     updateComposer() {
       const boardId = this.boardId();
-      this.input.disabled = !this.account.user || boardId === 'all' || this.sending;
+      const canPost = boardId === 'general' || this.model.canDiscuss(boardId);
+      this.input.disabled = !this.account.user || !canPost || this.sending;
       this.input.placeholder = !this.account.user ? 'Sign in to post'
-        : boardId === 'all' ? 'Select a cell on the map to start a discussion'
+        : !canPost ? 'Select a cell containing a map object to start a discussion'
           : boardId === 'general' ? 'Message the group...' : `Message ${boardId}...`;
       this.sendButton.disabled = this.input.disabled || !this.input.value.trim() || !navigator.onLine;
       this.sendButton.textContent = this.sending ? 'Sending...' : 'Send';
@@ -265,6 +279,8 @@ const MessageBoards = (() => {
           address.type = 'button';
           address.className = 'message-address';
           address.textContent = message.boardId;
+          address.disabled = !this.model.canDiscuss(message.boardId);
+          if (address.disabled) address.title = 'This cell has no map object. Existing messages remain readable here.';
           address.addEventListener('click', () => this.selectCell(message.boardId));
           article.append(address);
         }

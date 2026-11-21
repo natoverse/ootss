@@ -20,7 +20,6 @@
 
 <link href="js/lib//swiper/swiper-bundle.min.css" rel="stylesheet" />
 <script src="js/lib//swiper/swiper-bundle.min.js"></script>
-<script src="js/lib/imageSearch/image_search.js"></script>
 <script src="js/grid_coordinates.js"></script>
 <script src="js/fog_of_war.js"></script>
 <script src="js/puzzle_progress.js"></script>
@@ -735,7 +734,6 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
   <symbol id="ui-settings" viewBox="0 0 24 24"><path d="m9 3-1 3-3 1 1 3-2 2 2 2-1 3 3 1 1 3h6l1-3 3-1-1-3 2-2-2-2 1-3-3-1-1-3Z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="ui-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5Z M3 12l9 5 9-5 M3 16l9 5 9-5"/></symbol>
   <symbol id="ui-map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z M9 3v15 M15 6v15"/></symbol>
-  <symbol id="ui-camera" viewBox="0 0 24 24"><path d="M4 7h4l2-3h4l2 3h4v13H4Z"/><circle cx="12" cy="13" r="4"/></symbol>
   <symbol id="ui-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
   <symbol id="ui-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
   <symbol id="ui-plus" viewBox="0 0 24 24"><path d="M12 5v14 M5 12h14"/></symbol>
@@ -777,10 +775,6 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
         <button type="button" data-map-action="opacity">Show / Hide Completed Items</button>
       </div>
     </details>
-    <button id="drop" type="button" title="Find a location by screenshot: upload, drop an image, or paste it on the map">
-      <svg aria-hidden="true"><use href="#ui-camera"/></svg><span>Screenshot</span>
-    </button>
-    <input type="file" id="file" accept="image/*" hidden>
   </div>
   <div id="map-address"></div>
   <p id="message-layer-status" class="message-error" role="status" hidden></p>
@@ -1994,7 +1988,7 @@ function openPopup(e) {
   }
 
   const cellAddress = GridCoordinates.address(config[getBaseLayer(feature)], marker.getLatLng());
-  if (cellAddress) content += `<p><button type="button" onclick="messageBoard.selectCell('${cellAddress}', true)">Discuss This Cell</button></p>`;
+  if (cellAddress && puzzleProgress.objects.has(cellAddress)) content += `<p><button type="button" onclick="messageBoard.selectCell('${cellAddress}', true)">Discuss This Cell</button></p>`;
 
   marker.unbindPopup();
   marker.bindPopup(content, { offset: [0,5], maxWidth: 360, minWidth: 360 });
@@ -2346,7 +2340,6 @@ function initializeMapControls(zoomControl, mapControl, layerControl, searchCont
       if (!['copy-path', 'opacity'].includes(button.dataset.mapAction)) closeMenus();
     });
   });
-  document.getElementById('drop').addEventListener('click', closeMenus);
   document.getElementById('messages-toggle').addEventListener('click', closeMenus);
   document.getElementById('message-panel').addEventListener('pointerdown', closeMenus);
   document.addEventListener('click', event => {
@@ -2416,6 +2409,7 @@ function listenForMessageChits() {
     for (const address of addresses) {
       const cell = messageBoard.model.resolve(address);
       if (!cell || cell.layer !== baseLayerName) throw new Error('A cell message marker has an invalid address.');
+      if (!messageBoard.model.canDiscuss(address)) continue;
       const marker = L.marker([cell.latlng.lat + .4, cell.latlng.lng + .4], {
         pane: 'messageChits',
         title: `Read messages for ${address}`,
@@ -2437,7 +2431,8 @@ function listenForMessageChits() {
     if (generation !== messageChitGeneration) return;
     console.error('Cell message markers failed:', error);
     messageChitLayer.clearLayers();
-    status.textContent = `Cell message markers: ${error.message || String(error)}. Toggle Cell Messages off and on to retry.`;
+    const detail = (error.message || String(error)).replace(/\.+$/, '');
+    status.textContent = `Cell message markers: ${detail}. Toggle Cell Messages off and on to retry.`;
     status.hidden = false;
   });
 }
@@ -2470,7 +2465,8 @@ function initializeMessages() {
   map.on('click', event => {
     if (panel.hidden) return;
     const address = GridCoordinates.address(config[baseLayerName], event.latlng);
-    if (address) messageBoard.selectCell(address);
+    if (address && messageBoard.model.canDiscuss(address)) messageBoard.selectCell(address);
+    else messageBoard.clearCell();
   });
   map.on('zoomend', resizeMessageChits);
   listenForMessageChits();
@@ -2775,7 +2771,7 @@ function drawMap() {
       marker.on('click', () => {
         if (!messageBoard || messageBoard.root.hidden) return;
         const address = GridCoordinates.address(config[getBaseLayer(feature)], marker.getLatLng());
-        if (address) messageBoard.selectCell(address);
+        if (address && messageBoard.model.canDiscuss(address)) messageBoard.selectCell(address);
       });
 
       marker.addTo(layers[group]);
@@ -2894,20 +2890,6 @@ function drawMap() {
 
     initializeMapControls(zoomControl, mapcontrol, layercontrol, searchControl);
     initializeMessages();
-
-    initImageSearch(matches=>{
-      if (matches && matches.length>0) {
-        console.log('matches', matches);
-        let name = matches[0].name;
-        name = name.replaceAll('.webp','');
-        if (name) {
-          focusMarkerByName(name);
-        }
-      } else {
-        showAlert('Image Not Found');
-      }
-    });
-
 
     map.on('zoom overlayadd', updateZoom);
     updateZoom();

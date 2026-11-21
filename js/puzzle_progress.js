@@ -1,17 +1,24 @@
 const PuzzleProgress = (() => {
   const coordinates = typeof module === 'undefined' ? GridCoordinates : require('./grid_coordinates.js');
   const fog = typeof module === 'undefined' ? FogOfWar : require('./fog_of_war.js');
+  const objectTypes = new Set(['Level_Entry', 'Freezer', 'Teleporter', 'Marker', 'Voice_Log', 'Treasure', 'Sign']);
 
   class Index {
     constructor({ configs, features, layerForFeature, completionId }) {
       this.cells = new Map();
       this.screens = new Map();
+      this.objects = new Set();
+      const teleportTargets = new Set(features.filter(feature => feature.properties.type === 'Teleporter' && feature.properties.target_id)
+        .map(feature => String(feature.properties.target_id)));
       for (const feature of features) {
-        if (feature.properties.type !== 'Level_Entry') continue;
+        if (!objectTypes.has(feature.properties.type)) continue;
+        if (feature.properties.type === 'Marker' && !teleportTargets.has(String(feature.properties.id))) continue;
         const conf = configs[layerForFeature(feature)];
         const [lng, lat] = feature.geometry.coordinates;
         const address = coordinates.address(conf, { lat, lng });
         if (!address) continue;
+        this.objects.add(address);
+        if (feature.properties.type !== 'Level_Entry') continue;
         const screen = address.slice(0, -2);
         const id = completionId(feature.properties.name);
         for (const [index, key] of [[this.cells, address], [this.screens, screen]]) {
