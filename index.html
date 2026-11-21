@@ -741,6 +741,11 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
   <symbol id="ui-messages" viewBox="0 0 24 24"><path d="M3 4h18v13H9l-6 4Z M7 8h10 M7 12h7"/></symbol>
 </svg>
 <div id="map-dock" class="map-dock">
+<div id="map-controls-compact" class="map-controls-compact" role="group" aria-label="Map controls shortcuts" hidden>
+  <button id="map-controls-open" type="button" aria-label="Open Map Controls" aria-controls="map-controls" aria-expanded="false" title="Open Map Controls">
+    <svg aria-hidden="true"><use href="#ui-map"/></svg>
+  </button>
+</div>
 <div id="map-controls" class="map-controls leaflet-control" role="region" aria-label="Map controls">
   <div class="map-controls-header">
     <span class="map-controls-title">OOTSS Map</span>
@@ -751,6 +756,9 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
     <a class="repo-link" href="https://github.com/natoverse/ootss" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="Open the natoverse/ootss fork on GitHub">
       <img src="assets/github.svg" width="18" height="18" alt="" aria-hidden="true">
     </a>
+    <button id="map-controls-close" type="button" aria-label="Close Map Controls" aria-controls="map-controls" title="Close Map Controls" disabled>
+      <svg aria-hidden="true"><use href="#ui-close"/></svg>
+    </button>
   </div>
   <div id="map-search"></div>
   <div id="map-actions" class="map-actions" hidden>
@@ -2294,10 +2302,43 @@ function formatLayerName(name) {
   return name.replaceAll('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase()).replace(' Of ', ' of ');
 }
 
+function setMapControlsOpen(open) {
+  const controls = document.getElementById('map-controls');
+  const compact = document.getElementById('map-controls-compact');
+  const messages = document.getElementById('messages-toggle');
+  if (open) {
+    controls.querySelector('.map-controls-header').insertBefore(messages, controls.querySelector('.repo-link'));
+  } else {
+    controls.querySelectorAll('details').forEach(menu => { menu.open = false; });
+    controls.querySelector('.search-tooltip').style.display = 'none';
+    compact.appendChild(messages);
+  }
+  controls.hidden = !open;
+  compact.hidden = open;
+  document.getElementById('map-controls-open').setAttribute('aria-expanded', String(open));
+  document.getElementById('map-dock').scrollTop = 0;
+  document.getElementById(open ? 'map-controls-close' : 'map-controls-open').focus();
+}
+
 function initializeMapControls(zoomControl, mapControl, layerControl, searchControl) {
   const controls = document.getElementById('map-controls');
   const menus = [...controls.querySelectorAll('details')];
   const closeMenus = () => menus.forEach(menu => { menu.open = false; });
+  const closeButton = document.getElementById('map-controls-close');
+  const compact = document.getElementById('map-controls-compact');
+  closeButton.disabled = false;
+  closeButton.addEventListener('click', () => setMapControlsOpen(false));
+  document.getElementById('map-controls-open').addEventListener('click', () => setMapControlsOpen(true));
+  compact.addEventListener('keydown', event => {
+    if (event.code === 'KeyF' && (event.ctrlKey || event.metaKey)) {
+      setMapControlsOpen(true);
+      searchControl.expand(true);
+      event.preventDefault();
+    }
+    event.stopPropagation();
+  });
+  L.DomEvent.disableClickPropagation(compact);
+  L.DomEvent.disableScrollPropagation(compact);
   document.getElementById('map-zoom').appendChild(zoomControl.getContainer());
   document.getElementById('map-navigation').appendChild(mapControl.getContainer());
   document.getElementById('map-layers').appendChild(layerControl.getContainer());
@@ -2919,6 +2960,7 @@ function drawMap() {
 
     if (e.code=='KeyF') {
       if (e.ctrlKey || e.metaKey) {
+        setMapControlsOpen(true);
         searchControl.expand(true);
         e.preventDefault();
       } else {

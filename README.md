@@ -12,7 +12,8 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
   optional Firebase-backed profiles alongside permanent local guest saves.
 * Unified map controls: an upper-right dock for map navigation, visibility
   layers, cell addresses, search, settings and game-save tools, zoom, and a link
-  to this fork on GitHub.
+  to this fork on GitHub. Close it with the header's **X** to leave only compact
+  map-controls and Messages buttons; use the map button to reopen it.
 * Cell-aligned level markers: translucent, region-colored circles that scale
   with map zoom instead of oversized pins, with hover and selection highlights.
 * Per-screen completion: mark all puzzles solved together, with mixed-state

@@ -11,6 +11,42 @@
   pointer-events: none;
 }
 .map-dock:has(.message-panel:not([hidden])) { overflow-y: auto; overscroll-behavior: contain; }
+.map-dock:has(.map-controls[hidden]) {
+  top: calc(max(12px, env(safe-area-inset-top)) + 64px);
+  max-height: calc(100dvh - 88px);
+}
+.map-controls-compact {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 3;
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .97);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, .2);
+  pointer-events: auto;
+}
+.map-controls[hidden], .map-controls-compact[hidden] { display: none; }
+.map-controls-compact button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: #f0f4f8;
+  color: #243247;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.map-controls-compact button:hover { background: #e2eaf3; }
+.map-controls-compact button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.map-controls-compact svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .map-controls {
   position: relative;
   z-index: 2;
@@ -56,7 +92,9 @@
 .map-controls details[open] > summary { color: #1d4ed8; background: #e6efff; }
 
 .map-controls-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.map-controls-title { margin-right: auto; font-size: 14px; font-weight: 700; letter-spacing: -.2px; }
+.map-controls-title { min-width: 0; margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 700; letter-spacing: -.2px; }
+.map-controls-header > :not(.map-controls-title) { flex-shrink: 0; }
+.map-controls #map-controls-close { min-width: 36px; min-height: 36px; padding: 7px 9px; }
 .map-controls .repo-link { min-width: 36px; min-height: 36px; padding: 7px 9px; }
 .map-controls .repo-link img { display: block; width: 18px; height: 18px; }
 
@@ -260,6 +298,7 @@
   .map-controls .leaflet-control-zoom a { width: 40px; height: 40px; }
   .map-controls .repo-link, .map-controls .account-control button { min-height: 40px; }
   .map-controls .repo-link { min-width: 40px; }
+  .map-controls #map-controls-close { min-width: 40px; min-height: 40px; }
   .map-controls .leaflet-control-search input.search-input { font-size: 16px; }
   .map-controls .leaflet-control-layers label { min-height: 44px; }
   .message-panel button { min-height: 40px; }
