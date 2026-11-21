@@ -736,8 +736,6 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
   <symbol id="ui-map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z M9 3v15 M15 6v15"/></symbol>
   <symbol id="ui-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
   <symbol id="ui-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
-  <symbol id="ui-plus" viewBox="0 0 24 24"><path d="M12 5v14 M5 12h14"/></symbol>
-  <symbol id="ui-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
   <symbol id="ui-messages" viewBox="0 0 24 24"><path d="M3 4h18v13H9l-6 4Z M7 8h10 M7 12h7"/></symbol>
 </svg>
 <div id="map-dock" class="map-dock">
@@ -748,8 +746,7 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 </div>
 <div id="map-controls" class="map-controls leaflet-control" role="region" aria-label="Map controls">
   <div class="map-controls-header">
-    <span class="map-controls-title">OOTSS Map</span>
-    <div id="map-zoom"></div>
+    <div id="map-address"></div>
     <button id="messages-toggle" type="button" aria-label="Open Messages" aria-expanded="false" aria-controls="message-panel" title="Open Messages" disabled>
       <svg aria-hidden="true"><use href="#ui-messages"/></svg>
     </button>
@@ -784,7 +781,6 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
       </div>
     </details>
   </div>
-  <div id="map-address"></div>
   <p id="message-layer-status" class="message-error" role="status" hidden></p>
   <div id="account-control" class="account-control">
     <span id="account-user" class="account-user"></span>
@@ -1786,6 +1782,7 @@ function markItems() {
   }
   map.eachLayer(walk);
   updateScreenCompletion();
+  gridAddressControl?.update();
   refreshUnsolvedHighlights();
   if (messageBoard && !messageBoard.root.hidden) messageBoard.render();
 }
@@ -2166,9 +2163,11 @@ function addGridAddressControl() {
 
     onAdd(map) {
       this._container = L.DomUtil.create('div', 'grid-address-control');
-      this._container.title = 'Map code, signed screen X/Y from the starting screen, then cell X/Y from the lower left';
+      this._container.setAttribute('role', 'group');
+      this._address = L.DomUtil.create('span', 'cell-address', this._container);
+      this._progress = L.DomUtil.create('span', 'cell-progress', this._container);
       this._point = null;
-      L.DomEvent.on(map.getContainer(), 'mousemove', this._onMouseMove, this);
+      L.DomEvent.on(map.getContainer(), 'mousemove click', this._onMouseMove, this);
       L.DomEvent.on(map.getContainer(), 'mouseleave', this._onMouseLeave, this);
       map.on('moveend zoomend', this.update, this);
       this.update();
@@ -2176,14 +2175,14 @@ function addGridAddressControl() {
     },
 
     onRemove(map) {
-      L.DomEvent.off(map.getContainer(), 'mousemove', this._onMouseMove, this);
+      L.DomEvent.off(map.getContainer(), 'mousemove click', this._onMouseMove, this);
       L.DomEvent.off(map.getContainer(), 'mouseleave', this._onMouseLeave, this);
       map.off('moveend zoomend', this.update, this);
     },
 
     _onMouseMove(event) {
-      this._point = event.target.closest('.leaflet-control')
-        ? null : this._map.mouseEventToContainerPoint(event);
+      if (event.target.closest('.leaflet-control, .leaflet-popup')) return;
+      this._point = this._map.mouseEventToContainerPoint(event);
       this.update();
     },
 
@@ -2195,9 +2194,21 @@ function addGridAddressControl() {
 
     update() {
       const conf = config[baseLayerName];
-      this._container.hidden = !gridLayer || !this._map.hasLayer(gridLayer) || !GridCoordinates.supports(conf);
-      const address = this._point && GridCoordinates.address(conf, this._map.containerPointToLatLng(this._point));
-      this._container.textContent = address ? `Cell: ${address}` : 'Cell: Move over the grid';
+      this._container.hidden = !GridCoordinates.supports(conf);
+      const location = this._point ? this._map.containerPointToLatLng(this._point) : this._map.getCenter();
+      const address = GridCoordinates.address(conf, location);
+      this._address.textContent = address || 'Outside map';
+      if (address) {
+        const screen = address.slice(0, -2);
+        const state = puzzleProgress.screenState(screen, settings.markedItems);
+        this._progress.textContent = `${state.solved}/${state.count} solved`;
+        this._container.title = `${state.solved} of ${state.count} puzzles solved on ${screen}`;
+        this._container.setAttribute('aria-label', `Cell ${address}; ${this._container.title}`);
+      } else {
+        this._progress.textContent = 'No screen';
+        this._container.title = 'Move over the map to see a cell address and screen puzzle completion';
+        this._container.setAttribute('aria-label', 'Outside the map');
+      }
     },
   });
   gridAddressControl = new GridAddressControl().addTo(map);
@@ -2306,11 +2317,15 @@ function setMapControlsOpen(open) {
   const controls = document.getElementById('map-controls');
   const compact = document.getElementById('map-controls-compact');
   const messages = document.getElementById('messages-toggle');
+  const address = document.getElementById('map-address');
   if (open) {
-    controls.querySelector('.map-controls-header').insertBefore(messages, controls.querySelector('.repo-link'));
+    const header = controls.querySelector('.map-controls-header');
+    header.insertBefore(address, header.firstChild);
+    header.insertBefore(messages, controls.querySelector('.repo-link'));
   } else {
     controls.querySelectorAll('details').forEach(menu => { menu.open = false; });
     controls.querySelector('.search-tooltip').style.display = 'none';
+    compact.insertBefore(address, document.getElementById('map-controls-open'));
     compact.appendChild(messages);
   }
   controls.hidden = !open;
@@ -2320,7 +2335,7 @@ function setMapControlsOpen(open) {
   document.getElementById(open ? 'map-controls-close' : 'map-controls-open').focus();
 }
 
-function initializeMapControls(zoomControl, mapControl, layerControl, searchControl) {
+function initializeMapControls(mapControl, layerControl, searchControl) {
   const controls = document.getElementById('map-controls');
   const menus = [...controls.querySelectorAll('details')];
   const closeMenus = () => menus.forEach(menu => { menu.open = false; });
@@ -2339,14 +2354,11 @@ function initializeMapControls(zoomControl, mapControl, layerControl, searchCont
   });
   L.DomEvent.disableClickPropagation(compact);
   L.DomEvent.disableScrollPropagation(compact);
-  document.getElementById('map-zoom').appendChild(zoomControl.getContainer());
   document.getElementById('map-navigation').appendChild(mapControl.getContainer());
   document.getElementById('map-layers').appendChild(layerControl.getContainer());
   document.getElementById('map-address').appendChild(gridAddressControl.getContainer());
   document.getElementById('map-actions').hidden = false;
   for (const [selector, icon, label] of [
-    ['.leaflet-control-zoom-in', 'plus', 'Zoom in'],
-    ['.leaflet-control-zoom-out', 'minus', 'Zoom out'],
     ['.search-button', 'search', 'Search locations'],
     ['.search-cancel', 'close', 'Clear search'],
   ]) {
@@ -2637,7 +2649,6 @@ function drawMap() {
     saveSettings();
   });
 
-  const zoomControl = L.control.zoom({ position: 'topright' }).addTo(map);
 
   // Fit map to image bounds
   //map.fitBounds(bounds);
@@ -2929,7 +2940,7 @@ function drawMap() {
       focusMarkerByName(feature.properties.id);
     });
 
-    initializeMapControls(zoomControl, mapcontrol, layercontrol, searchControl);
+    initializeMapControls(mapcontrol, layercontrol, searchControl);
     initializeMessages();
 
     map.on('zoom overlayadd', updateZoom);

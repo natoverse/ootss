@@ -19,12 +19,12 @@ const progress = new Index({
 
 test('a partial screen checks all puzzles; undoing one leaves the others solved', () => {
   const marked = { First: true, Neighbor: true };
-  assert.deepEqual(progress.screenState('O+00+00', marked), { count: 2, checked: false, indeterminate: true });
+  assert.deepEqual(progress.screenState('O+00+00', marked), { count: 2, solved: 1, checked: false, indeterminate: true });
   progress.setScreenSolved('O+00+00', marked, true);
   assert.deepEqual(marked, { First: true, Second: true, Neighbor: true });
-  assert.deepEqual(progress.screenState('O+00+00', marked), { count: 2, checked: true, indeterminate: false });
+  assert.deepEqual(progress.screenState('O+00+00', marked), { count: 2, solved: 2, checked: true, indeterminate: false });
   delete marked.Second;
-  assert.deepEqual(progress.screenState('O+00+00', marked), { count: 2, checked: false, indeterminate: true });
+  assert.deepEqual(progress.screenState('O+00+00', marked), { count: 2, solved: 1, checked: false, indeterminate: true });
   assert.equal(marked.First, true);
 });
 
@@ -32,9 +32,9 @@ test('clearing a screen affects only its puzzles, not neighboring screens, layer
   const marked = { First: true, Second: true, Neighbor: true, Sky: true, Freezer: true };
   progress.setScreenSolved('O+00+00', marked, false);
   assert.deepEqual(marked, { Neighbor: true, Sky: true, Freezer: true });
-  assert.deepEqual(progress.screenState('O+00+00', marked), { count: 2, checked: false, indeterminate: false });
-  assert.deepEqual(progress.screenState('OH+00+00', marked), { count: 1, checked: true, indeterminate: false });
-  assert.deepEqual(progress.screenState('O+03+03', marked), { count: 0, checked: false, indeterminate: false });
+  assert.deepEqual(progress.screenState('O+00+00', marked), { count: 2, solved: 0, checked: false, indeterminate: false });
+  assert.deepEqual(progress.screenState('OH+00+00', marked), { count: 1, solved: 1, checked: true, indeterminate: false });
+  assert.deepEqual(progress.screenState('O+03+03', marked), { count: 0, solved: 0, checked: false, indeterminate: false });
   assert.throws(() => progress.setScreenSolved('O+03+03', marked, true), /no puzzles/);
 });
 
@@ -42,7 +42,7 @@ test('bulk completion persists in the existing markedItems JSON without another 
   const settings = { markedItems: {}, fogOfWar: true, revealedScreens: { 'O+00+00': true } };
   progress.setScreenSolved('O+00+00', settings.markedItems, true);
   const restored = JSON.parse(JSON.stringify(settings));
-  assert.deepEqual(progress.screenState('O+00+00', restored.markedItems), { count: 2, checked: true, indeterminate: false });
+  assert.deepEqual(progress.screenState('O+00+00', restored.markedItems), { count: 2, solved: 2, checked: true, indeterminate: false });
   assert.equal(restored.fogOfWar, true);
   assert.deepEqual(restored.revealedScreens, { 'O+00+00': true });
 });

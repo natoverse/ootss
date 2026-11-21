@@ -21,6 +21,9 @@
   right: max(12px, env(safe-area-inset-right));
   z-index: 3;
   display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: min(384px, calc(100vw - 24px));
   gap: 6px;
   padding: 4px;
   border: 1px solid rgba(255, 255, 255, .7);
@@ -36,6 +39,7 @@
   justify-content: center;
   width: 44px;
   height: 44px;
+  flex: 0 0 44px;
   padding: 0;
   border: 0;
   border-radius: 9px;
@@ -92,29 +96,13 @@
 .map-controls details[open] > summary { color: #1d4ed8; background: #e6efff; }
 
 .map-controls-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.map-controls-title { min-width: 0; margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 700; letter-spacing: -.2px; }
-.map-controls-header > :not(.map-controls-title) { flex-shrink: 0; }
+#map-address { flex: 1 1 auto; min-width: 0; }
+.map-controls-header > :not(#map-address) { flex-shrink: 0; }
 .map-controls #map-controls-close { min-width: 36px; min-height: 36px; padding: 7px 9px; }
 .map-controls .repo-link { min-width: 36px; min-height: 36px; padding: 7px 9px; }
 .map-controls .repo-link img { display: block; width: 18px; height: 18px; }
 
 .map-controls .leaflet-control { float: none; clear: none; margin: 0; z-index: auto; }
-.map-controls .leaflet-control-zoom { display: flex; border: 0; border-radius: 9px; box-shadow: none; overflow: hidden; }
-.map-controls .leaflet-control-zoom a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: #f0f4f8;
-  color: #243247;
-  text-indent: 0;
-}
-.map-controls .leaflet-control-zoom a + a { border-left: 1px solid #dbe3ed; }
-.map-controls .leaflet-control-zoom .leaflet-disabled { color: #a5afbc; }
 
 .map-actions { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
 .map-actions summary, .map-actions > button { flex-direction: column; gap: 4px; width: 100%; min-height: 56px; padding: 8px 5px; font-size: 12px; }
@@ -220,7 +208,24 @@
 .map-controls .account-user { max-width: 140px; color: #243247; }
 .map-controls .account-error { color: #b42332; }
 .map-controls #firebase-setup-link { color: #1d4ed8; }
-.map-controls .grid-address-control { margin-top: 10px; padding: 8px 10px; border: 1px solid #dce4ee; border-radius: 9px; background: #f8fafc; color: #334155; font: 600 12px/1.5 monospace; pointer-events: auto; user-select: text; }
+.map-controls .grid-address-control, .map-controls-compact .grid-address-control {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  float: none;
+  clear: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #334155;
+  font: 600 12px/1.3 monospace;
+  white-space: nowrap;
+  pointer-events: auto;
+  user-select: text;
+}
+.grid-address-control[hidden] { display: none !important; }
+.grid-address-control .cell-progress { color: #52657d; font: 500 11px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 
 .message-panel {
   position: relative;
@@ -295,7 +300,6 @@
   .board-message header { flex-wrap: wrap; }
 }
 @media (pointer: coarse) {
-  .map-controls .leaflet-control-zoom a { width: 40px; height: 40px; }
   .map-controls .repo-link, .map-controls .account-control button { min-height: 40px; }
   .map-controls .repo-link { min-width: 40px; }
   .map-controls #map-controls-close { min-width: 40px; min-height: 40px; }

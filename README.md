@@ -11,9 +11,10 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
 * [Google accounts and cloud settings](#google-accounts-and-cloud-settings):
   optional Firebase-backed profiles alongside permanent local guest saves.
 * Unified map controls: an upper-right dock for map navigation, visibility
-  layers, cell addresses, search, settings and game-save tools, zoom, and a link
-  to this fork on GitHub. Close it with the header's **X** to leave only compact
-  map-controls and Messages buttons; use the map button to reopen it.
+  layers, cell addresses, screen puzzle completion, search, settings and game-save
+  tools, and a link to this fork on GitHub. Close it with the header's **X** to leave a
+  cell-address/completion bar with map-controls and Messages buttons; use the map
+  button to reopen it. Zoom with the mouse wheel or a pinch gesture.
 * Cell-aligned level markers: translucent, region-colored circles that scale
   with map zoom instead of oversized pins, with hover and selection highlights.
 * Per-screen completion: mark all puzzles solved together, with mixed-state
@@ -31,8 +32,11 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
 
 ## Grid addresses
 
-Enable **Grid** in the dock's **Layers** panel to show screen addresses, a lighter
-cell grid inside each screen, and a live **Cell** address while hovering.
+Enable **Grid** in the dock's **Layers** panel to show screen addresses and a lighter
+cell grid inside each screen. The controls header always shows the hovered cell
+address and solved/total puzzles on its screen, even with controls collapsed or
+Grid hidden. Tap the map to update the readout on mobile; before hovering or
+tapping, it follows the map center.
 This applies to all map layers.
 
 Addresses combine signed screen X/Y coordinates with cell X/Y letters.

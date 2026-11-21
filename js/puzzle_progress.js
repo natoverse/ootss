@@ -33,6 +33,7 @@ const PuzzleProgress = (() => {
       const solved = [...ids].filter(id => markedItems[id] === true).length;
       return {
         count: ids.size,
+        solved,
         checked: ids.size > 0 && solved === ids.size,
         indeterminate: solved > 0 && solved < ids.size,
       };
