@@ -3,18 +3,9 @@ const MessageBoards = (() => {
   const fog = typeof module === 'undefined' ? FogOfWar : require('./fog_of_war.js');
 
   class Model {
-    constructor({ configs, features, layerForFeature, completionId }) {
+    constructor({ configs, progress }) {
       this.configs = configs;
-      this.puzzles = new Map();
-      for (const feature of features) {
-        if (feature.properties.type !== 'Level_Entry') continue;
-        const conf = configs[layerForFeature(feature)];
-        const [lng, lat] = feature.geometry.coordinates;
-        const address = coordinates.address(conf, { lat, lng });
-        if (!address) continue;
-        if (!this.puzzles.has(address)) this.puzzles.set(address, new Set());
-        this.puzzles.get(address).add(completionId(feature.properties.name));
-      }
+      this.progress = progress;
     }
 
     resolve(address) {
@@ -31,7 +22,7 @@ const MessageBoards = (() => {
       if (!cell) return ['Unknown cell'];
       const reasons = [];
       if (fog.isObscured(settings, cell.screen)) reasons.push('Unexplored screen');
-      if ([...(this.puzzles.get(cell.address) || [])].some(id => settings.markedItems?.[id] !== true)) {
+      if ([...(this.progress.cells.get(cell.address) || [])].some(id => settings.markedItems?.[id] !== true)) {
         reasons.push('Unsolved puzzle');
       }
       return reasons;

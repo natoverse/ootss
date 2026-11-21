@@ -15,6 +15,8 @@ This fork extends [joric/ootss](https://github.com/joric/ootss) with:
   lookup, zoom, and a link to this fork on GitHub.
 * Cell-aligned level markers: translucent, region-colored circles that scale
   with map zoom instead of oversized pins, with hover and selection highlights.
+* Per-screen completion: mark all puzzles solved together, with mixed-state
+  checkboxes that preserve individual exceptions.
 * [Shared message boards](#messages): signed cell discussions, general chat,
   progress-aware spoiler controls, and optional cell-corner message chits.
 * [Automated deployment](#github-pages-deployment): GitHub Actions publishes
@@ -61,6 +63,15 @@ entry screen and can be adjusted if further exploration shows otherwise.
 cover unexplored screens and their markers; only each layer's origin starts clear.
 Uncheck the cloud checkbox in a screen's upper-right corner to reveal it, or
 check it again to obscure it. This works independently of the **Grid** overlay.
+
+The **All** checkbox immediately below each cloud checkbox marks every puzzle
+on that screen solved. A dash means only some puzzles are solved; clicking it
+marks all solved. You can then uncheck an individual puzzle's **Solved** box
+without clearing the others, and the screen checkbox returns to a dash.
+Unchecking a fully checked screen checkbox clears that screen's puzzle flags.
+Empty screens have a disabled completion checkbox. Completion uses the existing
+saved puzzle flags, so it works with guest/cloud profiles and settings imports
+and exports; it does not reveal the screen or change fog settings.
 
 The **Layers** panel also includes **Reveal All** and **Hide All** buttons.
 These update the saved screen checkboxes only for the selected map layer, always

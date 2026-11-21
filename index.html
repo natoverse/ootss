@@ -23,6 +23,7 @@
 <script src="js/lib/imageSearch/image_search.js"></script>
 <script src="js/grid_coordinates.js"></script>
 <script src="js/fog_of_war.js"></script>
+<script src="js/puzzle_progress.js"></script>
 <script src="js/message_board.js"></script>
 <script src="js/level_markers.js"></script>
 <script src="js/firebase_config.js"></script>
@@ -154,6 +155,22 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
 .fog-screen-toggle input {
   margin: 0;
   cursor: pointer;
+}
+
+.fog-screen-control {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.screen-solve-toggle span {
+  font: 600 10px/1.2 sans-serif;
+  color: #15803d;
+}
+
+.screen-solve-toggle:has(input:disabled) {
+  opacity: .6;
+  cursor: default;
 }
 
 .fog-bulk-actions {
@@ -808,6 +825,8 @@ let localDataName = 'joricsOotSS';
 let localData = {};
 let settings = localData;
 let settingsAccount = null;
+let puzzleProgress = null;
+const screenSolveInputs = new Map();
 let messageBoard = null;
 let messageChitLayer = null;
 let messageChitUnsubscribe = null;
@@ -1745,6 +1764,10 @@ function markItems() {
       let hidden = found && settings.hideFound;
 
       layer._icon?.classList[hidden ? 'add' : 'remove']('hidden');
+      if (o?.type === 'Level_Entry' && layer.isPopupOpen()) {
+        const solved = layer.getPopup().getElement()?.querySelector('.level-solved');
+        if (solved) solved.checked = found;
+      }
 
 
     } else if (layer instanceof L.LayerGroup) {
@@ -1752,6 +1775,7 @@ function markItems() {
     }
   }
   map.eachLayer(walk);
+  updateScreenCompletion();
   if (messageBoard && !messageBoard.root.hidden) messageBoard.render();
 }
 
@@ -1954,9 +1978,9 @@ function openPopup(e) {
   let content = `${header}${image}${subtitle}${footer}`;
 
   if (o.type=='Level_Entry') {
-    let cid = o.name;
+    let cid = baseName(o.name);
     content = content
-    + `<p><input type=checkbox id="${cid}" onclick=toggleFound("${cid}")${settings.markedItems[cid]==true?' checked':''}>`
+    + `<p><input type=checkbox class="level-solved" id="${cid}" onclick=toggleFound("${cid}")${settings.markedItems[cid]==true?' checked':''}>`
     + `<label for="${cid}">Solved</label>`;
   }
 
@@ -2173,9 +2197,20 @@ function isMarkerObscured(marker) {
   return FogOfWar.isObscured(settings, GridCoordinates.screen(conf, marker.getLatLng()));
 }
 
+function updateScreenCompletion() {
+  if (!puzzleProgress) return;
+  for (const [screen, input] of screenSolveInputs) {
+    const state = puzzleProgress.screenState(screen, settings.markedItems);
+    input.checked = state.checked;
+    input.indeterminate = state.indeterminate;
+    input.disabled = state.count === 0;
+  }
+}
+
 function updateFog() {
   if (!fogLayer) return;
   fogLayer.clearLayers();
+  screenSolveInputs.clear();
   map.closePopup();
   hoverPreview.hide();
   const conf = config[baseLayerName];
@@ -2193,15 +2228,17 @@ function updateFog() {
         keyboard: false,
         icon: L.divIcon({
           className: 'fog-screen-control',
-          iconSize: [38, 24],
+          iconSize: [38, 50],
           iconAnchor: [38, 0],
-          html: `<label class="fog-screen-toggle" title="Uncheck to reveal ${address}; check to obscure it"><input type="checkbox" aria-label="Fog of war for ${address}"${settings.revealedScreens[address] === true ? '' : ' checked'}><span aria-hidden="true">&#9729;</span></label>`,
+          html: `<label class="fog-screen-toggle" title="Uncheck to reveal ${address}; check to obscure it"><input class="fog-screen-input" type="checkbox" aria-label="Fog of war for ${address}"${settings.revealedScreens[address] === true ? '' : ' checked'}><span aria-hidden="true">&#9729;</span></label>`
+            + `<label class="fog-screen-toggle screen-solve-toggle" title="Check to solve all puzzles on ${address}; uncheck to clear them. A dash means some are solved."><input class="screen-solve-input" type="checkbox" aria-label="Solve all puzzles on ${address}"><span aria-hidden="true">All</span></label>`,
         }),
       });
       control.on('add', () => {
         const icon = control.getElement();
         L.DomEvent.disableClickPropagation(icon);
-        const input = icon.querySelector('input');
+        L.DomEvent.on(icon, 'keydown', L.DomEvent.stopPropagation);
+        const input = icon.querySelector('.fog-screen-input');
         input.addEventListener('change', () => {
           settings.revealedScreens[address] = !input.checked;
           if (input.checked) fogLayer.addLayer(cloud);
@@ -2209,6 +2246,14 @@ function updateFog() {
           map.closePopup();
           hoverPreview.hide();
           updateMarkers();
+          saveSettings();
+        });
+        const solveInput = icon.querySelector('.screen-solve-input');
+        screenSolveInputs.set(address, solveInput);
+        updateScreenCompletion();
+        solveInput.addEventListener('change', () => {
+          puzzleProgress.setScreenSolved(address, settings.markedItems, solveInput.checked);
+          markItems();
           saveSettings();
         });
       });
@@ -2371,7 +2416,7 @@ function initializeMessages() {
     root: document.getElementById('message-panel'),
     toggle: document.getElementById('messages-toggle'),
     account: settingsAccount,
-    model: new MessageBoards.Model({ configs: config, features: allFeatures, layerForFeature: getBaseLayer, completionId: baseName }),
+    model: new MessageBoards.Model({ configs: config, progress: puzzleProgress }),
     getSettings: () => settings,
     onSelectCell(cell) {
       if (messageSelection) { map.removeLayer(messageSelection); messageSelection = null; }
@@ -2402,6 +2447,7 @@ function initializeMessages() {
 function drawMap() {
 
   layers = {};
+  puzzleProgress = new PuzzleProgress.Index({ configs: config, features: allFeatures, layerForFeature: getBaseLayer, completionId: baseName });
 
   for (const name of Object.keys(config)) {
 

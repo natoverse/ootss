@@ -1,18 +1,21 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { Model } = require('../js/message_board.js');
+const { Index } = require('../js/puzzle_progress.js');
 
 const conf = { corner: [-24, -2], size: [190, 156], grid: [19, 13], addressPrefix: 'O', addressOrigin: [5, 5] };
 const feature = (name, x, y, layer = 'overworld') => ({
   properties: { type: 'Level_Entry', name, layer },
   geometry: { coordinates: [x, y, 0] },
 });
-const model = new Model({
-  configs: { overworld: conf, overworld_high: { ...conf, addressPrefix: 'OH' } },
+const configs = { overworld: conf, overworld_high: { ...conf, addressPrefix: 'OH' } };
+const progress = new Index({
+  configs,
   features: [feature('Puzzle@area', 80, 69), feature('Another', 80, 69), feature('Sky', 80, 69, 'overworld_high')],
   layerForFeature: feature => feature.properties.layer,
   completionId: name => name.split('@')[0],
 });
+const model = new Model({ configs, progress });
 
 test('spoilers combine screen exploration with all puzzles at the exact cell', () => {
   const state = { fogOfWar: true, revealedScreens: {}, markedItems: {} };
