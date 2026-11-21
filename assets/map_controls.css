@@ -225,7 +225,10 @@
   user-select: text;
 }
 .grid-address-control[hidden] { display: none !important; }
-.grid-address-control .cell-progress { color: #52657d; font: 500 11px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.grid-address-control .cell-stats { display: flex; gap: 8px; color: #52657d; font: 500 11px/1.1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.grid-address-control .cell-stat { display: flex; flex-direction: column; gap: 1px; }
+.grid-address-control .stat-label { font-size: 9px; }
+.grid-address-control .visible-stat { padding-left: 8px; border-left: 1px solid #dce4ee; }
 
 .message-panel {
   position: relative;

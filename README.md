@@ -37,6 +37,9 @@ cell grid inside each screen. The controls header always shows the hovered cell
 address and solved/total puzzles on its screen, even with controls collapsed or
 Grid hidden. Tap the map to update the readout on mobile; before hovering or
 tapping, it follows the map center.
+The adjacent **Visible** solved/total count covers all revealed screens on the
+selected map, not just the viewport. Disabling fog includes every screen. Both
+counts update when puzzles are marked solved or screens are revealed or obscured.
 This applies to all map layers.
 
 Addresses combine signed screen X/Y coordinates with cell X/Y letters.

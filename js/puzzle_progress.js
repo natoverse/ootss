@@ -39,6 +39,20 @@ const PuzzleProgress = (() => {
       };
     }
 
+    visibleState(conf, settings) {
+      const ids = new Set();
+      for (const [screen, puzzles] of this.screens) {
+        if ((screen.startsWith(`${conf.addressPrefix}+`) || screen.startsWith(`${conf.addressPrefix}-`))
+          && !fog.isObscured(settings, screen)) {
+          for (const id of puzzles) ids.add(id);
+        }
+      }
+      return {
+        count: ids.size,
+        solved: [...ids].filter(id => settings.markedItems?.[id] === true).length,
+      };
+    }
+
     unsolvedCells(conf, settings) {
       const result = [];
       for (const [address, ids] of this.cells) {

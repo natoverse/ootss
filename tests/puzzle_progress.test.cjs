@@ -59,6 +59,42 @@ test('unsolved highlights exclude fog-covered cells and other map layers', () =>
   assert.deepEqual(progress.unsolvedCells(conf, settings).map(cell => cell.address), ['O+00+00LG']);
 });
 
+test('visible progress follows revealed screens, completion and the selected map', () => {
+  const settings = {
+    fogOfWar: true, revealedScreens: { 'O+00+00': true, 'OH+00+00': true },
+    markedItems: { First: true, Neighbor: true, Sky: true, Freezer: true },
+  };
+  assert.deepEqual(progress.visibleState(conf, settings), { count: 2, solved: 1 });
+  settings.revealedScreens['O+01+00'] = true;
+  assert.deepEqual(progress.visibleState(conf, settings), { count: 3, solved: 2 });
+  settings.markedItems.Second = true;
+  assert.deepEqual(progress.visibleState(conf, settings), { count: 3, solved: 3 });
+  settings.revealedScreens['O+01+00'] = false;
+  assert.deepEqual(progress.visibleState(conf, settings), { count: 2, solved: 2 });
+  settings.fogOfWar = false;
+  assert.deepEqual(progress.visibleState(conf, settings), { count: 3, solved: 3 });
+  settings.markedItems.Neighbor = false;
+  assert.deepEqual(progress.visibleState(conf, settings), { count: 3, solved: 2 });
+  settings.fogOfWar = true;
+  assert.deepEqual(progress.visibleState({ ...conf, addressPrefix: 'OH' }, settings), { count: 1, solved: 1 });
+  settings.revealedScreens = {};
+  assert.deepEqual(progress.visibleState(conf, settings), { count: 0, solved: 0 });
+});
+
+test('visible progress counts a puzzle once even when aliases span multiple screens', () => {
+  const aliases = new Index({
+    configs: { overworld: conf },
+    features: [feature('Shared@first', 80, 69), feature('Shared@second', 90, 69), feature('Other', 81, 69)],
+    layerForFeature: feature => feature.properties.layer,
+    completionId: name => name.split('@')[0],
+  });
+  const settings = { fogOfWar: false, markedItems: { Shared: true } };
+  assert.deepEqual(aliases.visibleState(conf, settings), { count: 2, solved: 1 });
+  settings.markedItems.Other = true;
+  assert.deepEqual(aliases.visibleState(conf, settings), { count: 2, solved: 2 });
+  assert.deepEqual(aliases.visibleState({ ...conf, addressPrefix: 'OH' }, settings), { count: 0, solved: 0 });
+});
+
 test('a cell stays highlighted until every puzzle at that cell is solved', () => {
   const shared = new Index({
     configs: { overworld: conf },

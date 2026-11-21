@@ -2157,7 +2157,13 @@ function addGridAddressControl() {
       this._container = L.DomUtil.create('div', 'grid-address-control');
       this._container.setAttribute('role', 'group');
       this._address = L.DomUtil.create('span', 'cell-address', this._container);
-      this._progress = L.DomUtil.create('span', 'cell-progress', this._container);
+      const stats = L.DomUtil.create('div', 'cell-stats', this._container);
+      const screenStat = L.DomUtil.create('div', 'cell-stat', stats);
+      this._progress = L.DomUtil.create('span', 'cell-progress', screenStat);
+      L.DomUtil.create('span', 'stat-label', screenStat).textContent = 'Screen';
+      const visibleStat = L.DomUtil.create('div', 'cell-stat visible-stat', stats);
+      this._visibleProgress = L.DomUtil.create('span', 'visible-progress', visibleStat);
+      L.DomUtil.create('span', 'stat-label', visibleStat).textContent = 'Visible';
       this._point = null;
       L.DomEvent.on(map.getContainer(), 'mousemove click', this._onMouseMove, this);
       L.DomEvent.on(map.getContainer(), 'mouseleave', this._onMouseLeave, this);
@@ -2190,16 +2196,22 @@ function addGridAddressControl() {
       const location = this._point ? this._map.containerPointToLatLng(this._point) : this._map.getCenter();
       const address = GridCoordinates.address(conf, location);
       this._address.textContent = address || 'Outside map';
+      const visible = puzzleProgress.visibleState(conf, settings);
+      this._visibleProgress.textContent = `${visible.solved}/${visible.count}`;
+      const visibleSummary = `${visible.solved} of ${visible.count} puzzles solved across ${settings.fogOfWar ? 'revealed' : 'all'} screens on ${formatLayerName(baseLayerName)}`;
+      this._visibleProgress.title = visibleSummary;
       if (address) {
         const screen = address.slice(0, -2);
         const state = puzzleProgress.screenState(screen, settings.markedItems);
-        this._progress.textContent = `${state.solved}/${state.count} solved`;
-        this._container.title = `${state.solved} of ${state.count} puzzles solved on ${screen}`;
+        this._progress.textContent = `${state.solved}/${state.count}`;
+        this._progress.title = `${state.solved} of ${state.count} puzzles solved on ${screen}`;
+        this._container.title = `${this._progress.title}; ${visibleSummary}`;
         this._container.setAttribute('aria-label', `Cell ${address}; ${this._container.title}`);
       } else {
         this._progress.textContent = 'No screen';
-        this._container.title = 'Move over the map to see a cell address and screen puzzle completion';
-        this._container.setAttribute('aria-label', 'Outside the map');
+        this._progress.title = 'Move over the map to see screen puzzle completion';
+        this._container.title = visibleSummary;
+        this._container.setAttribute('aria-label', `Outside the map; ${visibleSummary}`);
       }
     },
   });
