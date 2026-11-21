@@ -57,7 +57,8 @@
 
 .map-controls-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .map-controls-title { margin-right: auto; font-size: 14px; font-weight: 700; letter-spacing: -.2px; }
-.map-controls .repo-link { min-height: 36px; padding: 7px 9px; font-size: 12px; }
+.map-controls .repo-link { min-width: 36px; min-height: 36px; padding: 7px 9px; }
+.map-controls .repo-link img { display: block; width: 18px; height: 18px; }
 
 .map-controls .leaflet-control { float: none; clear: none; margin: 0; z-index: auto; }
 .map-controls .leaflet-control-zoom { display: flex; border: 0; border-radius: 9px; box-shadow: none; overflow: hidden; }
@@ -253,12 +254,12 @@
 @media (max-width: 360px) {
   .map-controls { padding: 10px; }
   .map-actions summary, .map-actions > button { padding: 8px 1px; font-size: 11px; }
-  .map-controls .repo-link span { display: none; }
   .board-message header { flex-wrap: wrap; }
 }
 @media (pointer: coarse) {
   .map-controls .leaflet-control-zoom a { width: 40px; height: 40px; }
   .map-controls .repo-link, .map-controls .account-control button { min-height: 40px; }
+  .map-controls .repo-link { min-width: 40px; }
   .map-controls .leaflet-control-search input.search-input { font-size: 16px; }
   .map-controls .leaflet-control-layers label { min-height: 44px; }
   .message-panel button { min-height: 40px; }

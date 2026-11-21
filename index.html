@@ -717,7 +717,6 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
   <symbol id="ui-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M6 18 18 6"/></symbol>
   <symbol id="ui-plus" viewBox="0 0 24 24"><path d="M12 5v14 M5 12h14"/></symbol>
   <symbol id="ui-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
-  <symbol id="ui-repository" viewBox="0 0 24 24"><circle cx="6" cy="4" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="20" r="2"/><path d="M6 6v12 M18 8v2a6 6 0 0 1-6 6H6"/></symbol>
   <symbol id="ui-messages" viewBox="0 0 24 24"><path d="M3 4h18v13H9l-6 4Z M7 8h10 M7 12h7"/></symbol>
 </svg>
 <div id="map-dock" class="map-dock">
@@ -728,8 +727,8 @@ html, body, #map { width:100%; height: 100%; margin: 0; padding: 0; overflow: hi
     <button id="messages-toggle" type="button" aria-label="Open Messages" aria-expanded="false" aria-controls="message-panel" title="Open Messages" disabled>
       <svg aria-hidden="true"><use href="#ui-messages"/></svg>
     </button>
-    <a class="repo-link" href="https://github.com/natoverse/ootss" target="_blank" rel="noopener noreferrer" title="Open the natoverse/ootss fork on GitHub">
-      <svg aria-hidden="true"><use href="#ui-repository"/></svg><span>GitHub</span>
+    <a class="repo-link" href="https://github.com/natoverse/ootss" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="Open the natoverse/ootss fork on GitHub">
+      <img src="assets/github.svg" width="18" height="18" alt="" aria-hidden="true">
     </a>
   </div>
   <div id="map-search"></div>
